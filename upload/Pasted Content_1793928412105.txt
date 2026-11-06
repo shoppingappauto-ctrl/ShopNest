@@ -1,0 +1,1451 @@
+# SHOPNEST — COMPLETE MASTER DEVELOPMENT PROMPT
+## Native iOS & Android Family Shopping, Collaboration & Household Management Platform
+
+**Project:** ShopNest  
+**Product type:** Consumer mobile application / subscription SaaS  
+**Platforms:** Native iOS and Android  
+**Technology:** Expo, React Native, TypeScript, Supabase, Next.js  
+**Business model:** Freemium household subscriptions, with future retailer subscriptions  
+**Primary objective:** Launch a working MVP as quickly as possible, validate real demand, and build monthly recurring revenue (MRR).
+
+---
+
+# 1. INSTRUCTIONS TO THE DEVELOPMENT AI
+
+You are the lead software architect, senior mobile engineer, backend developer, UI/UX designer, database architect, security engineer, QA engineer and DevOps engineer responsible for building **ShopNest**.
+
+You must create a real, functional, scalable mobile application for iPhone and Android.
+
+You are authorized to:
+
+- Design and implement the complete application.
+- Create and modify project files.
+- Build the frontend and backend.
+- Design the database and APIs.
+- Implement authentication and real-time synchronization.
+- Create the administrative dashboard.
+- Write and execute tests.
+- Fix bugs and compatibility issues.
+- Improve performance and security.
+- Refactor code where necessary.
+- Prepare native mobile builds.
+- Update documentation.
+- Continue through approved development phases without repeatedly asking permission.
+
+**Approved: Proceed with development and routine technical decisions without waiting for my approval.**
+
+Only request approval for production deployment, app-store publication, activating paid services, real financial transactions, destructive operations or significant changes to the approved product scope.
+
+Do not stop after producing a plan, architecture document or mockup.
+
+Build the application, test it and provide working deliverables.
+
+Never claim functionality has been completed without verification.
+
+---
+
+# 2. PRODUCT NAME AND BRAND IDENTITY
+
+The application must be called:
+
+# ShopNest
+
+**Proposed tagline:** Your Family. Your Shopping. One Place.
+
+ShopNest is a modern family shopping and household collaboration platform.
+
+It enables people at home and people shopping in stores to coordinate purchases instantly.
+
+The brand must be friendly, memorable, modern and suitable for international expansion.
+
+## Branding requirements
+
+Create a consistent brand system covering:
+
+- ShopNest application name.
+- ShopNest logo and icon.
+- iOS and Android application icons.
+- Splash screen.
+- Login and registration screens.
+- App navigation.
+- Email templates.
+- Push notifications.
+- Subscription screens.
+- Admin portal.
+- Help and support pages.
+- Privacy policy and terms.
+- App Store and Google Play metadata.
+
+Use the name ShopNest consistently.
+
+Do not use AnyList, CartKin or another competitor's branding anywhere in the application.
+
+Before commercial publication, verify ShopNest domain, app-store name and trademark availability. Do not assume the name is legally cleared.
+
+Keep bundle identifiers and domains configurable until the final brand checks are complete.
+
+---
+
+# 3. PRODUCT VISION
+
+ShopNest will become a comprehensive household shopping assistant.
+
+The primary use case:
+
+A wife is at home while her husband shops at Walmart.
+
+She adds milk, bread, diapers, vegetables and other items to ShopNest.
+
+His shopping list updates instantly.
+
+He checks items off while shopping.
+
+She sees what has been purchased.
+
+If he is uncertain about a product, he sends a photograph through ShopNest.
+
+She confirms whether it is the correct product.
+
+The app also remembers which products the family usually buys and which stores they prefer.
+
+The same functionality must work for any household arrangement, including couples, families, roommates, relatives and caregivers.
+
+## Long-term vision
+
+ShopNest should eventually support:
+
+1. Live shared shopping lists.
+2. Multiple stores.
+3. Product photographs and confirmations.
+4. Household messaging.
+5. Location-based shopping reminders.
+6. Recurring household essentials.
+7. Party and event planning.
+8. Receipt and warranty storage.
+9. Barcode scanning.
+10. Shopping budgets.
+11. Specialty grocery discovery.
+12. Bangladeshi and halal groceries.
+13. Store availability information.
+14. Retailer partnerships.
+15. Future scan-and-pay.
+16. Household premium subscriptions.
+17. Retailer business subscriptions.
+
+The application must be designed for expansion without delaying the initial launch.
+
+---
+
+# 4. COMPETITIVE POSITIONING
+
+ShopNest must not be another generic shopping list application.
+
+Existing competitors include:
+
+- AnyList
+- Bring!
+- OurGroceries
+- Listonic
+- Cozi
+
+Do not copy their copyrighted designs, code or branding.
+
+ShopNest should differentiate through:
+
+**Live household collaboration**
+
+Fast synchronization, photo confirmations and item-specific discussions.
+
+**Multi-store shopping**
+
+Organize shopping across supermarkets, halal markets, Bangladeshi grocery shops, butchers, fish markets and independent stores.
+
+**Household intelligence**
+
+Remember recurring purchases, quantities, preferred shops and shopping history.
+
+**Simple design**
+
+No complicated navigation, excessive advertisements or unnecessary AI interactions.
+
+**Household organization**
+
+Shopping, events, receipts and warranties in one connected application.
+
+Do not assume these differences are sufficient to win customers. Measure activation, retention and willingness to pay.
+
+---
+
+# 5. TECHNICAL ARCHITECTURE
+
+Use a shared React Native codebase for iOS and Android.
+
+## Mobile application
+
+- Expo
+- React Native
+- TypeScript
+- Expo Router
+- TanStack Query
+- Zustand
+- Expo SQLite
+- Expo SecureStore
+- Expo Image Picker
+- Expo Camera
+- Expo Notifications
+- Expo Location
+- EAS Build
+
+Select stable, compatible package versions.
+
+## Backend
+
+- Supabase PostgreSQL
+- Supabase Authentication
+- Supabase Realtime
+- Supabase Storage
+- Supabase Edge Functions
+- PostgreSQL Row-Level Security
+- Scheduled backend jobs
+
+## Admin portal
+
+- Next.js
+- TypeScript
+- Tailwind CSS
+- shadcn/ui
+- Vercel
+
+## Payments
+
+- RevenueCat or compliant native iOS/Android billing
+- Stripe for eligible web and future retailer billing
+- Server-validated subscription entitlements
+
+## Monitoring
+
+- Sentry
+- PostHog or equivalent
+- Structured logs
+- Database and API monitoring
+- Cost tracking
+
+## Repository
+
+Create a maintainable monorepo:
+
+```text
+shopnest/
+  apps/
+    mobile/
+    admin/
+  packages/
+    shared/
+    ui/
+    database/
+  supabase/
+    migrations/
+    functions/
+    seed/
+  docs/
+  tests/
+  scripts/
+  .github/
+    workflows/
+```
+
+Use environment variables and proper secrets management.
+
+Never embed service-role keys or payment secrets inside the mobile application.
+
+---
+
+# 6. MVP — HIGHEST PRIORITY
+
+The first ShopNest release must provide a fully functional shared shopping experience.
+
+## Core MVP functionality
+
+- Account registration and login.
+- Email verification.
+- Apple and Google authentication.
+- Household creation.
+- Invite household members.
+- Accept household invitations.
+- Shared shopping lists.
+- Real-time synchronization.
+- Multiple stores.
+- Item quantities and notes.
+- Item photographs.
+- Item-specific questions and replies.
+- Purchased/unavailable/substituted status.
+- Basic recurring items.
+- Favorites.
+- Shopping history.
+- Offline shopping support.
+- Basic notifications.
+- Basic admin dashboard.
+- Error monitoring.
+
+Do not delay the MVP to implement AI video calls, complex retailer inventory or checkout systems.
+
+---
+
+# 7. AUTHENTICATION AND HOUSEHOLDS
+
+Users must be able to:
+
+- Register.
+- Verify their email.
+- Sign in.
+- Reset their password.
+- Sign in with Apple.
+- Sign in with Google.
+- Create a household.
+- Invite household members.
+- Accept invitations.
+- Manage members.
+- Leave households.
+- Delete accounts.
+
+Support household roles:
+
+- Owner
+- Admin
+- Member
+
+Households must be isolated from each other.
+
+A user may belong to multiple households.
+
+Invitation links must have expiration, revocation and abuse protection.
+
+All access control must be enforced server-side.
+
+---
+
+# 8. REAL-TIME SHOPPING LISTS
+
+This is ShopNest's most important feature.
+
+## Functional requirements
+
+Users can:
+
+- Create lists.
+- Rename lists.
+- Add products.
+- Edit products.
+- Delete products.
+- Set quantities.
+- Select units.
+- Add notes.
+- Attach photographs.
+- Select stores.
+- Categorize products.
+- Mark items purchased.
+- Mark items unavailable.
+- Suggest substitutes.
+- View purchase history.
+- Reuse previous items.
+
+## Live synchronization
+
+If a household member adds milk at home, the shopper must see it without manually refreshing.
+
+If the shopper marks milk purchased, the person at home must see the change.
+
+Use Supabase Realtime.
+
+Implement:
+
+- Optimistic updates.
+- Server-confirmed persistence.
+- Automatic reconnect.
+- Duplicate-event prevention.
+- Idempotent mutations.
+- Offline queues.
+- Conflict resolution.
+- Versioned records where appropriate.
+- Synchronization status.
+
+Test with two independently authenticated devices.
+
+Do not silently overwrite important concurrent edits.
+
+---
+
+# 9. MULTI-STORE SHOPPING
+
+ShopNest must support multiple stores.
+
+Examples:
+
+- Walmart
+- Costco
+- Target
+- Meijer
+- Kroger
+- Aldi
+- Al Aqsa
+- Halal markets
+- Bangladeshi grocery stores
+- Asian grocery stores
+- Local butcher shops
+- Fish markets
+
+## Features
+
+- Add a store.
+- Save favorite stores.
+- Search for stores.
+- Assign products to stores.
+- View shopping lists by store.
+- Move items between stores.
+- Save preferred stores for products.
+- Remember previous store selections.
+- Create custom stores.
+- Store addresses and optional notes.
+- Show all outstanding items across stores.
+
+Allow users to create a store manually without relying on Google Maps or another provider.
+
+Distinguish user-entered store information from verified external listings.
+
+---
+
+# 10. BANGLADESHI, HALAL AND SPECIALTY GROCERIES
+
+Support culturally diverse grocery shopping.
+
+Examples:
+
+- Hilsa fish
+- Rohu fish
+- Catla fish
+- Halal chicken
+- Halal beef
+- Goat meat
+- Basmati rice
+- Mustard oil
+- Green chilies
+- Coriander
+- Bottle gourd
+- Bitter gourd
+- Lentils
+- Spices
+
+## Requirements
+
+- English product names.
+- Bangla product names.
+- Optional transliteration.
+- Product photographs.
+- Custom product categories.
+- Preferred stores.
+- Search aliases.
+- Household-specific product catalogs.
+- User-entered halal tags.
+
+Never claim a product is certified halal unless supported by a verified source.
+
+Design the database to support more languages later.
+
+---
+
+# 11. PHOTOS AND PRODUCT CONFIRMATION
+
+A shopper must be able to ask another household member about an item.
+
+Example:
+
+"Is this the correct cooking oil?"
+
+Attach one or more photographs to the shopping item.
+
+Other household members can:
+
+- Reply.
+- Approve.
+- Reject.
+- Suggest another product.
+- Add a comment.
+
+Store these discussions with the relevant item.
+
+Use private file storage.
+
+Compress images to control storage costs.
+
+## Later
+
+Add:
+
+- Voice messages.
+- Audio calling.
+- Video calling.
+- More advanced product comparisons.
+
+Do not build a custom video-calling infrastructure for the MVP.
+
+---
+
+# 12. GPS AND STORE REMINDERS
+
+ShopNest should remember favorite store locations.
+
+## Initial release
+
+- Save store addresses.
+- Open navigation apps.
+- Show associated shopping lists.
+- Allow manual store selection.
+
+## Later release
+
+- Optional location reminders.
+- Geofencing.
+- Notifications when approaching saved stores.
+- Nearby specialty-store discovery.
+
+Example:
+
+"You have 4 outstanding items at Walmart."
+
+Location access must be optional.
+
+Do not track household members continuously.
+
+Do not expose one person's location to other household members by default.
+
+Follow Apple and Android permission requirements.
+
+---
+
+# 13. RECURRING HOUSEHOLD ITEMS
+
+Remember frequently purchased essentials.
+
+Examples:
+
+- Milk
+- Bread
+- Eggs
+- Diapers
+- Baby wipes
+- Rice
+- Cooking oil
+- Detergent
+- Toilet paper
+
+## Features
+
+- Favorite products.
+- Recurring schedules.
+- Last purchased dates.
+- Preferred quantities.
+- Preferred stores.
+- One-tap re-add.
+- Optional replenishment reminders.
+- Shopping templates.
+
+Start with deterministic rules.
+
+Do not require paid AI APIs.
+
+Later, offer intelligent suggestions based on purchase history.
+
+---
+
+# 14. PARTIES AND EVENTS
+
+Allow families to organize shopping for events.
+
+Examples:
+
+- Birthdays
+- Eid
+- Ramadan
+- Weddings
+- Family dinners
+- Barbecues
+- Thanksgiving
+- Christmas
+- Baby showers
+
+## Features
+
+- Event creation.
+- Event date.
+- Guest count.
+- Shopping checklist.
+- Store assignments.
+- Quantities.
+- Estimated budget.
+- Household task assignments.
+- Event templates.
+- Reuse previous event lists.
+
+Later, support recipe-based quantities and AI-assisted event planning.
+
+---
+
+# 15. RECEIPTS AND WARRANTY TRACKING
+
+Users should be able to organize household purchases.
+
+## Features
+
+- Upload receipt photographs.
+- Record purchase dates.
+- Record retailers.
+- Record prices.
+- Save product names.
+- Store serial numbers.
+- Save warranty documents.
+- Set warranty expiry dates.
+- Receive expiry reminders.
+- Search purchase history.
+
+Keep receipts and warranty documents private.
+
+Use signed URLs and appropriate retention policies.
+
+## Future
+
+- OCR receipt scanning.
+- Automatic product extraction.
+- Warranty date detection.
+- Household spending reports.
+
+Do not automatically send private receipts to third-party AI services without appropriate permission.
+
+---
+
+# 16. BARCODE SCANNING
+
+Add barcode scanning after the initial MVP.
+
+Users should be able to:
+
+- Scan product barcodes.
+- Identify known products.
+- Add products to lists.
+- Save barcode references.
+- Enter unknown products manually.
+- Associate scanned items with preferred stores.
+
+Use authorized or licensed product data.
+
+Do not fabricate barcode results.
+
+Show price sources and timestamps when prices are available.
+
+---
+
+# 17. FUTURE SCAN-AND-PAY
+
+This is a long-term commercial feature.
+
+Desired workflow:
+
+1. Shopper scans products.
+2. Products are added to a digital basket.
+3. Verified prices are displayed.
+4. Applicable taxes and discounts are calculated.
+5. Shopper confirms checkout.
+6. An authorized QR or checkout token is generated.
+7. A participating retailer validates the transaction.
+8. Payment is completed through an approved integration.
+9. A receipt is issued.
+
+**Important:** ShopNest cannot independently introduce checkout functionality at Walmart, Costco or other retailers.
+
+Retailer authorization, POS integrations, payment agreements and fraud controls are required.
+
+Do not build a fake checkout system.
+
+Keep this feature disabled until suitable partnerships exist.
+
+---
+
+# 18. STORE INVENTORY AND AVAILABILITY
+
+ShopNest should eventually help customers identify which stores stock particular products.
+
+## Initial version
+
+- Remember where products were previously purchased.
+- Allow users to mark products unavailable.
+- Save alternative stores.
+- Record user-reported availability.
+- Show the timestamp and source of reports.
+
+## Later version
+
+- Authorized retailer inventory APIs.
+- Retailer-managed catalogs.
+- Verified availability.
+- Community product reports.
+- Specialty-store product discovery.
+
+Never label unverified reports as live inventory.
+
+Do not scrape retailer websites in violation of their terms.
+
+---
+
+# 19. SUBSCRIPTION AND REVENUE MODEL
+
+ShopNest must support a freemium business model.
+
+## Free plan
+
+Include:
+
+- Shared household lists.
+- Real-time synchronization.
+- Multiple stores.
+- Basic photographs.
+- Basic item discussions.
+- Favorites.
+- Basic recurring items.
+- Shopping history.
+
+The free product must remain genuinely useful.
+
+## ShopNest Plus
+
+Proposed launch price:
+
+**$3.99/month per household**
+
+Potential premium features:
+
+- Advanced reminders.
+- Expanded photo and receipt storage.
+- Warranty tracking.
+- Advanced event planning.
+- Barcode productivity features.
+- Household shopping insights.
+- Premium templates.
+
+Support annual billing after pricing validation.
+
+## Subscription requirements
+
+- Native iOS billing.
+- Native Android billing.
+- Server-side entitlement validation.
+- Restore purchases.
+- Cancellation handling.
+- Grace periods.
+- Refund handling.
+- Subscription status.
+- Household-level premium access.
+- Subscription audit events.
+
+Use RevenueCat where appropriate.
+
+Follow current Apple and Google payment policies.
+
+Do not activate paid subscriptions without explicit approval.
+
+## Future ShopNest Retailer Pro
+
+Potential starting price:
+
+$29/month per store, subject to validation.
+
+Future capabilities:
+
+- Store profiles.
+- Product catalogs.
+- Verified availability.
+- Promotions.
+- Store analytics.
+- Customer discovery.
+
+Do not build the retailer portal before validating demand.
+
+---
+
+# 20. DATABASE ARCHITECTURE
+
+Create normalized PostgreSQL tables and version-controlled migrations.
+
+## Accounts
+
+- profiles
+- households
+- household_members
+- household_invitations
+- household_preferences
+
+## Shopping
+
+- shopping_lists
+- shopping_items
+- shopping_item_photos
+- shopping_item_comments
+- shopping_item_approvals
+- shopping_item_activity
+- household_products
+- item_categories
+- shopping_history
+
+## Stores
+
+- stores
+- store_locations
+- household_stores
+- product_store_preferences
+- store_availability_reports
+
+## Planning
+
+- recurring_item_rules
+- shopping_templates
+- template_items
+- household_events
+- event_items
+- reminders
+
+## Purchases
+
+- purchases
+- receipts
+- warranties
+- warranty_documents
+
+## Billing
+
+- subscription_accounts
+- subscription_entitlements
+- subscription_events
+- billing_audit_events
+
+## Operations
+
+- notification_preferences
+- push_tokens
+- notification_deliveries
+- support_tickets
+- user_feedback
+- admin_audit_logs
+- system_events
+
+Use UUIDs where appropriate.
+
+Implement foreign keys, indexes, uniqueness constraints, timestamps and clear deletion rules.
+
+Every user-owned record must have an enforceable ownership or household authorization relationship.
+
+Implement Row-Level Security.
+
+Test cross-household isolation.
+
+---
+
+# 21. SECURITY AND PRIVACY
+
+Security requirements:
+
+- Supabase Row-Level Security.
+- Secure authentication.
+- Server-side authorization.
+- Private storage buckets.
+- Signed file URLs.
+- File validation.
+- Rate limiting.
+- Safe account deletion.
+- Secure session management.
+- Proper secret handling.
+- Audit logging.
+- Subscription entitlement validation.
+- Least-privilege access.
+- Dependency security checks.
+
+Never expose Supabase service-role credentials in mobile code.
+
+Never rely on hidden UI elements to secure administrative functionality.
+
+Never expose private household lists to unrelated users.
+
+Provide clear privacy controls for photos, location, analytics and notifications.
+
+---
+
+# 22. ADMIN PORTAL
+
+Build a secure ShopNest Admin Portal using Next.js.
+
+Only authorized platform administrators may access it.
+
+## Dashboard
+
+Display:
+
+- Total registered users.
+- Active users.
+- New registrations.
+- Total households.
+- Active households.
+- Shopping lists created.
+- Items added.
+- Daily active users.
+- Weekly active users.
+- Monthly active users.
+- Free subscribers.
+- Paying households.
+- Monthly recurring revenue.
+- Failed payments.
+- Subscription cancellations.
+- Storage usage.
+- API costs where measurable.
+- App errors.
+- Support tickets.
+
+## User management
+
+Allow administrators to:
+
+- Search accounts.
+- View registration dates.
+- View account status.
+- View last login when available.
+- Review subscription status.
+- Suspend accounts.
+- Review support requests.
+- Process deletion requests.
+
+Do not expose private shopping lists, photographs or receipts to administrators by default.
+
+## Billing management
+
+- Subscription status.
+- Plan assignments.
+- Payment-provider references.
+- Refund and cancellation events.
+- Entitlement history.
+- Promotional access where permitted.
+
+## Operational monitoring
+
+- App crashes.
+- Synchronization failures.
+- Realtime connection errors.
+- Failed uploads.
+- Notification delivery issues.
+- Database health.
+- Storage usage.
+- Service costs.
+- Application versions.
+
+Display unavailable information honestly rather than inventing metrics.
+
+---
+
+# 23. ANALYTICS AND GROWTH
+
+Track privacy-conscious product analytics.
+
+Important events:
+
+- App registration.
+- Household creation.
+- Invitation sent.
+- Invitation accepted.
+- First shopping list created.
+- First item added.
+- First shared-list interaction.
+- First completed shopping session.
+- Return shopping sessions.
+- Premium trial started.
+- Subscription purchased.
+- Subscription cancelled.
+
+Do not send private shopping item contents, personal messages, receipts or precise location data to analytics providers.
+
+## Key metrics
+
+- Activated households.
+- Weekly active households.
+- Day 7 retention.
+- Day 30 retention.
+- Free-to-paid conversion.
+- MRR.
+- Churn.
+- Revenue per paying household.
+- Infrastructure cost per active household.
+
+Define activation as at least two household members interacting with a shared shopping list.
+
+---
+
+# 24. UI AND USER EXPERIENCE
+
+Create a premium-quality mobile application.
+
+## Design principles
+
+- Simple.
+- Fast.
+- Modern.
+- Clean.
+- Family-friendly.
+- Accessible.
+- Easy to use while shopping.
+- Minimal unnecessary navigation.
+
+Support light and dark modes.
+
+Use large, accessible shopping checkboxes.
+
+## Main navigation
+
+1. Home
+2. Shopping Lists
+3. Stores
+4. Planner
+5. Household
+
+## Home screen
+
+Display:
+
+- Current shopping lists.
+- Outstanding items.
+- Favorite stores.
+- Household activity.
+- Recurring essentials.
+- Upcoming events.
+- Quick Add button.
+
+## Shopping list screen
+
+Display:
+
+- List name.
+- Store.
+- Item name.
+- Quantity.
+- Notes.
+- Photograph.
+- Purchase checkbox.
+- Comments and confirmation status.
+- Last updated information.
+
+Prioritize fast entry and minimal taps.
+
+Support accessibility settings, Dynamic Type and screen readers.
+
+---
+
+# 25. NOTIFICATIONS
+
+Implement configurable notifications.
+
+Examples:
+
+- Household member requests product confirmation.
+- Shopping reminder.
+- Event reminder.
+- Warranty expiry.
+- Subscription issue.
+
+Avoid excessive notifications for every minor list edit.
+
+Support notification preferences and grouping.
+
+Use appropriate native notification permissions.
+
+---
+
+# 26. OFFLINE SUPPORT
+
+ShopNest must work in stores with poor cellular coverage.
+
+Implement:
+
+- Locally cached lists.
+- Offline item additions.
+- Offline item completion.
+- Offline editing.
+- Pending mutation queue.
+- Automatic retries.
+- Conflict handling.
+- Synchronization indicators.
+- Duplicate prevention.
+
+Test airplane-mode behavior.
+
+A local change must not be presented as synchronized until the server confirms it.
+
+---
+
+# 27. PERFORMANCE AND SCALABILITY
+
+Design ShopNest for gradual growth.
+
+Requirements:
+
+- Efficient database queries.
+- Indexed household queries.
+- Scoped Realtime subscriptions.
+- Pagination.
+- Image compression.
+- Lazy loading.
+- API rate limits.
+- Background processing where necessary.
+- Cost monitoring.
+- Storage quotas.
+- Error monitoring.
+
+Avoid premature microservices.
+
+Use a modular architecture that can scale as customer demand increases.
+
+---
+
+# 28. TESTING
+
+Implement automated and manual testing.
+
+## Unit tests
+
+- Item calculations.
+- Recurring schedules.
+- Input validation.
+- Subscription entitlements.
+- Shopping list sorting.
+- Conflict resolution.
+
+## Integration tests
+
+- Authentication.
+- Household invitations.
+- List synchronization.
+- Item updates.
+- File uploads.
+- Database permissions.
+- Billing webhooks.
+
+## End-to-end tests
+
+Test on iOS and Android:
+
+1. Register two users.
+2. Verify accounts.
+3. Create a household.
+4. Invite the second user.
+5. Accept the invitation.
+6. Create a shopping list.
+7. Add an item.
+8. Verify it appears on the second device.
+9. Mark it purchased.
+10. Verify the first device updates.
+11. Disconnect from the internet.
+12. Add an offline item.
+13. Reconnect.
+14. Verify synchronization.
+15. Upload a photograph.
+16. Sign out.
+17. Sign in.
+18. Confirm data persists.
+
+Use Maestro or a suitable equivalent.
+
+## Security tests
+
+- Cross-household data access.
+- Invalid invitation tokens.
+- Unauthorized file access.
+- Role escalation.
+- Expired sessions.
+- Malicious uploads.
+- Duplicate payment webhooks.
+
+Do not declare production readiness with unresolved critical vulnerabilities.
+
+---
+
+# 29. DEPLOYMENT
+
+Maintain separate environments:
+
+- Development
+- Staging
+- Production
+
+## iOS
+
+Prepare:
+
+- Apple bundle identifier.
+- App icon.
+- Splash screen.
+- Permissions.
+- EAS iOS build.
+- TestFlight distribution.
+- App Store metadata.
+
+## Android
+
+Prepare:
+
+- Android application ID.
+- App icon.
+- Splash screen.
+- Permissions.
+- EAS Android build.
+- Google Play internal testing.
+- Play Store metadata.
+
+## Compliance
+
+Prepare:
+
+- Privacy policy.
+- Terms of service.
+- Account deletion.
+- Subscription disclosures.
+- App privacy declarations.
+- Google Play Data Safety information.
+- Support contact details.
+
+Do not publish without explicit approval.
+
+---
+
+# 30. DEVELOPMENT ROADMAP
+
+## Phase 0 — Project foundation
+
+Target: 2–3 days.
+
+Build:
+
+- Repository.
+- Expo application.
+- Supabase configuration.
+- Database migrations.
+- Authentication.
+- Admin foundation.
+- CI checks.
+- Environment documentation.
+
+## Phase 1 — ShopNest MVP
+
+Target: 2–4 weeks, subject to implementation and testing.
+
+Build:
+
+- User accounts.
+- Households.
+- Invitations.
+- Live shopping lists.
+- Multi-store shopping.
+- Item photos.
+- Product questions.
+- Basic recurring items.
+- Offline synchronization.
+- Notifications.
+- Admin analytics.
+- Error monitoring.
+
+Deliver native test builds.
+
+## Phase 2 — ShopNest Plus
+
+Target: Weeks 5–8.
+
+Build:
+
+- Native subscriptions.
+- Premium entitlements.
+- Receipt management.
+- Warranty tracking.
+- Party planning.
+- Barcode scanning.
+- Advanced reminders.
+- Optional GPS store reminders.
+
+## Phase 3 — Shopping intelligence
+
+Target: Months 3–5.
+
+Build:
+
+- Advanced recurring suggestions.
+- Bangla/English catalog improvements.
+- Product search.
+- Household budgeting.
+- Product price history.
+- Store availability reports.
+- Approved retailer data integrations.
+
+## Phase 4 — ShopNest for Retailers
+
+Target: Months 5–9, conditional on retailer demand.
+
+Build:
+
+- Retailer accounts.
+- Store catalogs.
+- Verified inventory updates.
+- Promotions.
+- Retailer subscriptions.
+- Store analytics.
+
+## Phase 5 — Retailer Scan-and-Pay
+
+Only after retailer partnerships and approved payment integrations.
+
+Build:
+
+- Authorized basket creation.
+- Verified pricing.
+- POS integration.
+- QR checkout.
+- Payment processing.
+- Receipts.
+- Fraud controls.
+- Refund workflows.
+
+---
+
+# 31. COST MANAGEMENT
+
+ShopNest must be economical to operate.
+
+Track:
+
+- Database usage.
+- Storage usage.
+- Bandwidth.
+- Realtime connections.
+- Push notification services.
+- Authentication costs.
+- Image processing costs.
+- Error monitoring.
+- Subscription provider fees.
+- AI API usage if introduced later.
+
+Use free or low-cost tiers where appropriate.
+
+Set budget alerts and usage limits where supported.
+
+Do not assume that a monitoring alert automatically prevents spending.
+
+Do not enable expensive AI integrations by default.
+
+Provide cost reports in the admin portal using real service data where available.
+
+---
+
+# 32. DEVELOPMENT AGENT EXECUTION RULES
+
+Follow this process:
+
+1. Inspect the existing repository and environment.
+2. Identify available tools and credentials.
+3. Produce a concise implementation plan.
+4. Begin development.
+5. Implement complete vertical features.
+6. Run TypeScript, lint and automated tests.
+7. Fix errors.
+8. Verify real database functionality.
+9. Verify authorization and RLS.
+10. Test on actual devices or supported simulators.
+11. Document completed features.
+12. Continue to the next approved milestone.
+
+At each milestone, provide:
+
+- Features completed.
+- Tests passed.
+- Tests failed.
+- Known bugs.
+- Outstanding integrations.
+- Required external credentials.
+- Running costs.
+- Next tasks.
+
+Do not claim that an iOS or Android build was tested if the necessary build environment was unavailable.
+
+Do not use simulated data in production interfaces unless explicitly labeled as a demo.
+
+Continue development without unnecessary approval requests, subject to the authorization restrictions in Section 1.
+
+---
+
+# 33. REQUIRED DOCUMENTATION
+
+Create:
+
+```text
+README.md
+docs/ARCHITECTURE.md
+docs/DATABASE.md
+docs/SECURITY.md
+docs/FEATURES.md
+docs/ROADMAP.md
+docs/TESTING.md
+docs/DEPLOYMENT.md
+docs/BILLING.md
+docs/ADMIN.md
+docs/ANALYTICS.md
+docs/API_INTEGRATIONS.md
+docs/COST_TRACKING.md
+docs/RELEASE_CHECKLIST.md
+```
+
+Documentation must be understandable to a founder with limited programming experience.
+
+Explain exactly which services require configuration, accounts, credentials or payment.
+
+---
+
+# 34. MVP ACCEPTANCE CRITERIA
+
+ShopNest MVP is complete only when:
+
+- Two users can register.
+- Both can join the same household.
+- Both can access the same shopping list.
+- List changes synchronize in real time.
+- Users can organize products by store.
+- Users can attach item photographs.
+- Users can discuss and confirm products.
+- Users can mark items purchased.
+- Users can save recurring essentials.
+- Offline shopping works.
+- Offline changes synchronize after reconnection.
+- Household data remains private.
+- Admin metrics use real data.
+- Errors are monitored.
+- Native iOS and Android test builds are available.
+- No unresolved critical security issues remain.
+
+---
+
+# 35. FINAL INSTRUCTION — BEGIN SHOPNEST DEVELOPMENT
+
+**Build ShopNest now.**
+
+Prioritize a real, secure, fast, reliable native shopping app that families can use together.
+
+Do not waste development time on features that are unnecessary for the first launch.
+
+Do not stop at a prototype.
+
+Implement the backend, database, mobile applications, authentication, household collaboration, real-time synchronization, offline support, admin portal, testing and build configuration.
+
+Prepare the product for a small private beta first.
+
+Once the MVP passes acceptance testing, continue with approved Phase 2 work.
+
+The commercial goal is to attract real households, achieve strong retention, introduce useful premium features and establish sustainable monthly recurring revenue.
+
+**Start with Phase 0 and Phase 1 immediately.**

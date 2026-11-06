@@ -1,0 +1,262 @@
+// ShopNest — Family Shopping & Household Collaboration Platform
+// Data model (SQLite via Prisma; enums are represented as validated string fields)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Accounts ────────────────────────────────────────────────────────────────
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String
+  passwordHash String
+  avatarColor  String    @default("#16a34a") // used for avatar chips
+  isAdmin      Boolean   @default(false) // platform administrator (admin portal)
+  isSuspended  Boolean   @default(false)
+  emailVerified Boolean  @default(false) // email delivery is disabled in this sandbox build
+  lastActiveAt DateTime  @default(now())
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  sessions     Session[]
+  memberships  HouseholdMember[]
+  comments     ItemComment[]
+  activities   Activity[]
+  addedItems   ShoppingItem[] @relation("ItemAdder")
+  purchasedItems ShoppingItem[] @relation("ItemPurchaser")
+}
+
+model Session {
+  id        String   @id @default(cuid()) // opaque session token stored in an httpOnly cookie
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ─── Households ──────────────────────────────────────────────────────────────
+
+model Household {
+  id         String   @id @default(cuid())
+  name       String
+  inviteCode String   @unique
+  plan       String   @default("FREE") // FREE | PLUS (PLUS requires payment activation - disabled in this build)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  members   HouseholdMember[]
+  stores    Store[]
+  lists     ShoppingList[]
+  products  HouseholdProduct[]
+  events    HouseholdEvent[]
+  activities Activity[]
+  items     ShoppingItem[]
+}
+
+model HouseholdMember {
+  id          String   @id @default(cuid())
+  householdId String
+  userId      String
+  role        String   @default("MEMBER") // OWNER | ADMIN | MEMBER
+  joinedAt    DateTime @default(now())
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([householdId, userId])
+  @@index([userId])
+}
+
+// Invitations are handled with expiring household invite codes (regenerable, revocable).
+
+// ─── Stores ──────────────────────────────────────────────────────────────────
+
+model Store {
+  id          String   @id @default(cuid())
+  householdId String
+  name        String
+  category    String   @default("SUPERMARKET") // SUPERMARKET | HALAL | BANGLADESHI | ASIAN | BUTCHER | FISH | OTHER
+  address     String?
+  notes       String?
+  isFavorite  Boolean  @default(false)
+  verified    Boolean  @default(false) // false = user-entered (never shown as verified external listing)
+  createdAt   DateTime @default(now())
+
+  household Household        @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  lists     ShoppingList[]
+  items     ShoppingItem[]
+  products  HouseholdProduct[]
+  eventItems EventItem[]
+
+  @@index([householdId])
+}
+
+// ─── Shopping lists & items ──────────────────────────────────────────────────
+
+model ShoppingList {
+  id          String   @id @default(cuid())
+  householdId String
+  storeId     String?
+  name        String
+  emoji       String   @default("🛒")
+  status      String   @default("ACTIVE") // ACTIVE | COMPLETED | ARCHIVED
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  household Household      @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  store     Store?         @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  items     ShoppingItem[]
+
+  @@index([householdId])
+}
+
+model ShoppingItem {
+  id             String    @id @default(cuid())
+  listId         String
+  householdId    String
+  name           String
+  nameBn         String? // Bangla product name (specialty groceries)
+  quantity       Float     @default(1)
+  unit           String    @default("pc")
+  note           String?
+  category       String    @default("OTHER")
+  status         String    @default("PENDING") // PENDING | PURCHASED | UNAVAILABLE | SUBSTITUTED
+  substitutedWith String?
+  storeId        String? // per-item store override
+  favoriteProductId String? // link to household product when re-added from favorites/catalog
+  isRecurring    Boolean   @default(false)
+  addedById      String
+  purchasedAt    DateTime?
+  purchasedById  String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  list        ShoppingList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  household   Household    @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  store       Store?       @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  favoriteProduct HouseholdProduct? @relation(fields: [favoriteProductId], references: [id], onDelete: SetNull)
+  addedBy     User         @relation("ItemAdder", fields: [addedById], references: [id], onDelete: Cascade)
+  purchasedBy User?        @relation("ItemPurchaser", fields: [purchasedById], references: [id], onDelete: SetNull)
+  photos      ItemPhoto[]
+  comments    ItemComment[]
+
+  @@index([listId])
+  @@index([householdId])
+}
+
+model ItemPhoto {
+  id           String   @id @default(cuid())
+  itemId       String
+  uploadedById String
+  dataUrl      String // base64 data URL, client-compressed (private, household-scoped access only)
+  createdAt    DateTime @default(now())
+
+  item ShoppingItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([itemId])
+}
+
+model ItemComment {
+  id     String   @id @default(cuid())
+  itemId String
+  userId String
+  kind   String   @default("COMMENT") // COMMENT | APPROVE | REJECT | SUBSTITUTE
+  text   String
+  createdAt DateTime @default(now())
+
+  item ShoppingItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  user User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([itemId])
+}
+
+// ─── Household product catalog (favorites / recurring essentials) ───────────
+
+model HouseholdProduct {
+  id              String    @id @default(cuid())
+  householdId     String
+  name            String
+  nameBn          String?
+  category        String    @default("OTHER")
+  defaultQty      Float     @default(1)
+  unit            String    @default("pc")
+  storeId         String?
+  isFavorite      Boolean   @default(true)
+  isRecurring     Boolean   @default(false)
+  recurrenceDays  Int? // e.g. every 7 days
+  lastPurchasedAt DateTime?
+  timesPurchased  Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  household Household     @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  store     Store?        @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  items     ShoppingItem[]
+
+  @@index([householdId])
+}
+
+// ─── Planner: household events ───────────────────────────────────────────────
+
+model HouseholdEvent {
+  id          String    @id @default(cuid())
+  householdId String
+  name        String
+  type        String    @default("GATHERING") // BIRTHDAY | EID | RAMADAN | WEDDING | GATHERING | BBQ | HOLIDAY | BABY_SHOWER | OTHER
+  date        DateTime?
+  guestCount  Int?
+  budget      Float?
+  notes       String?
+  status      String    @default("PLANNING") // PLANNING | COMPLETED
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  household Household  @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  items     EventItem[]
+
+  @@index([householdId])
+}
+
+model EventItem {
+  id          String   @id @default(cuid())
+  eventId     String
+  name        String
+  quantity    Float    @default(1)
+  unit        String   @default("pc")
+  category    String   @default("OTHER")
+  storeId     String?
+  isDone      Boolean  @default(false)
+  createdById String
+  createdAt   DateTime @default(now())
+
+  event HouseholdEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  store Store?         @relation(fields: [storeId], references: [id], onDelete: SetNull)
+
+  @@index([eventId])
+}
+
+// ─── Activity feed (household-scoped notifications) ──────────────────────────
+
+model Activity {
+  id          String   @id @default(cuid())
+  householdId String
+  userId      String?
+  type        String // ITEM_ADDED | ITEM_PURCHASED | ITEM_STATUS | COMMENT | PHOTO | LIST_CREATED | MEMBER_JOINED | EVENT | ...
+  message     String
+  createdAt   DateTime @default(now())
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([householdId, createdAt])
+}

@@ -1,0 +1,1452 @@
+     1→# SHOPNEST — COMPLETE MASTER DEVELOPMENT PROMPT
+     2→## Native iOS & Android Family Shopping, Collaboration & Household Management Platform
+     3→
+     4→**Project:** ShopNest  
+     5→**Product type:** Consumer mobile application / subscription SaaS  
+     6→**Platforms:** Native iOS and Android  
+     7→**Technology:** Expo, React Native, TypeScript, Supabase, Next.js  
+     8→**Business model:** Freemium household subscriptions, with future retailer subscriptions  
+     9→**Primary objective:** Launch a working MVP as quickly as possible, validate real demand, and build monthly recurring revenue (MRR).
+    10→
+    11→---
+    12→
+    13→# 1. INSTRUCTIONS TO THE DEVELOPMENT AI
+    14→
+    15→You are the lead software architect, senior mobile engineer, backend developer, UI/UX designer, database architect, security engineer, QA engineer and DevOps engineer responsible for building **ShopNest**.
+    16→
+    17→You must create a real, functional, scalable mobile application for iPhone and Android.
+    18→
+    19→You are authorized to:
+    20→
+    21→- Design and implement the complete application.
+    22→- Create and modify project files.
+    23→- Build the frontend and backend.
+    24→- Design the database and APIs.
+    25→- Implement authentication and real-time synchronization.
+    26→- Create the administrative dashboard.
+    27→- Write and execute tests.
+    28→- Fix bugs and compatibility issues.
+    29→- Improve performance and security.
+    30→- Refactor code where necessary.
+    31→- Prepare native mobile builds.
+    32→- Update documentation.
+    33→- Continue through approved development phases without repeatedly asking permission.
+    34→
+    35→**Approved: Proceed with development and routine technical decisions without waiting for my approval.**
+    36→
+    37→Only request approval for production deployment, app-store publication, activating paid services, real financial transactions, destructive operations or significant changes to the approved product scope.
+    38→
+    39→Do not stop after producing a plan, architecture document or mockup.
+    40→
+    41→Build the application, test it and provide working deliverables.
+    42→
+    43→Never claim functionality has been completed without verification.
+    44→
+    45→---
+    46→
+    47→# 2. PRODUCT NAME AND BRAND IDENTITY
+    48→
+    49→The application must be called:
+    50→
+    51→# ShopNest
+    52→
+    53→**Proposed tagline:** Your Family. Your Shopping. One Place.
+    54→
+    55→ShopNest is a modern family shopping and household collaboration platform.
+    56→
+    57→It enables people at home and people shopping in stores to coordinate purchases instantly.
+    58→
+    59→The brand must be friendly, memorable, modern and suitable for international expansion.
+    60→
+    61→## Branding requirements
+    62→
+    63→Create a consistent brand system covering:
+    64→
+    65→- ShopNest application name.
+    66→- ShopNest logo and icon.
+    67→- iOS and Android application icons.
+    68→- Splash screen.
+    69→- Login and registration screens.
+    70→- App navigation.
+    71→- Email templates.
+    72→- Push notifications.
+    73→- Subscription screens.
+    74→- Admin portal.
+    75→- Help and support pages.
+    76→- Privacy policy and terms.
+    77→- App Store and Google Play metadata.
+    78→
+    79→Use the name ShopNest consistently.
+    80→
+    81→Do not use AnyList, CartKin or another competitor's branding anywhere in the application.
+    82→
+    83→Before commercial publication, verify ShopNest domain, app-store name and trademark availability. Do not assume the name is legally cleared.
+    84→
+    85→Keep bundle identifiers and domains configurable until the final brand checks are complete.
+    86→
+    87→---
+    88→
+    89→# 3. PRODUCT VISION
+    90→
+    91→ShopNest will become a comprehensive household shopping assistant.
+    92→
+    93→The primary use case:
+    94→
+    95→A wife is at home while her husband shops at Walmart.
+    96→
+    97→She adds milk, bread, diapers, vegetables and other items to ShopNest.
+    98→
+    99→His shopping list updates instantly.
+   100→
+   101→He checks items off while shopping.
+   102→
+   103→She sees what has been purchased.
+   104→
+   105→If he is uncertain about a product, he sends a photograph through ShopNest.
+   106→
+   107→She confirms whether it is the correct product.
+   108→
+   109→The app also remembers which products the family usually buys and which stores they prefer.
+   110→
+   111→The same functionality must work for any household arrangement, including couples, families, roommates, relatives and caregivers.
+   112→
+   113→## Long-term vision
+   114→
+   115→ShopNest should eventually support:
+   116→
+   117→1. Live shared shopping lists.
+   118→2. Multiple stores.
+   119→3. Product photographs and confirmations.
+   120→4. Household messaging.
+   121→5. Location-based shopping reminders.
+   122→6. Recurring household essentials.
+   123→7. Party and event planning.
+   124→8. Receipt and warranty storage.
+   125→9. Barcode scanning.
+   126→10. Shopping budgets.
+   127→11. Specialty grocery discovery.
+   128→12. Bangladeshi and halal groceries.
+   129→13. Store availability information.
+   130→14. Retailer partnerships.
+   131→15. Future scan-and-pay.
+   132→16. Household premium subscriptions.
+   133→17. Retailer business subscriptions.
+   134→
+   135→The application must be designed for expansion without delaying the initial launch.
+   136→
+   137→---
+   138→
+   139→# 4. COMPETITIVE POSITIONING
+   140→
+   141→ShopNest must not be another generic shopping list application.
+   142→
+   143→Existing competitors include:
+   144→
+   145→- AnyList
+   146→- Bring!
+   147→- OurGroceries
+   148→- Listonic
+   149→- Cozi
+   150→
+   151→Do not copy their copyrighted designs, code or branding.
+   152→
+   153→ShopNest should differentiate through:
+   154→
+   155→**Live household collaboration**
+   156→
+   157→Fast synchronization, photo confirmations and item-specific discussions.
+   158→
+   159→**Multi-store shopping**
+   160→
+   161→Organize shopping across supermarkets, halal markets, Bangladeshi grocery shops, butchers, fish markets and independent stores.
+   162→
+   163→**Household intelligence**
+   164→
+   165→Remember recurring purchases, quantities, preferred shops and shopping history.
+   166→
+   167→**Simple design**
+   168→
+   169→No complicated navigation, excessive advertisements or unnecessary AI interactions.
+   170→
+   171→**Household organization**
+   172→
+   173→Shopping, events, receipts and warranties in one connected application.
+   174→
+   175→Do not assume these differences are sufficient to win customers. Measure activation, retention and willingness to pay.
+   176→
+   177→---
+   178→
+   179→# 5. TECHNICAL ARCHITECTURE
+   180→
+   181→Use a shared React Native codebase for iOS and Android.
+   182→
+   183→## Mobile application
+   184→
+   185→- Expo
+   186→- React Native
+   187→- TypeScript
+   188→- Expo Router
+   189→- TanStack Query
+   190→- Zustand
+   191→- Expo SQLite
+   192→- Expo SecureStore
+   193→- Expo Image Picker
+   194→- Expo Camera
+   195→- Expo Notifications
+   196→- Expo Location
+   197→- EAS Build
+   198→
+   199→Select stable, compatible package versions.
+   200→
+   201→## Backend
+   202→
+   203→- Supabase PostgreSQL
+   204→- Supabase Authentication
+   205→- Supabase Realtime
+   206→- Supabase Storage
+   207→- Supabase Edge Functions
+   208→- PostgreSQL Row-Level Security
+   209→- Scheduled backend jobs
+   210→
+   211→## Admin portal
+   212→
+   213→- Next.js
+   214→- TypeScript
+   215→- Tailwind CSS
+   216→- shadcn/ui
+   217→- Vercel
+   218→
+   219→## Payments
+   220→
+   221→- RevenueCat or compliant native iOS/Android billing
+   222→- Stripe for eligible web and future retailer billing
+   223→- Server-validated subscription entitlements
+   224→
+   225→## Monitoring
+   226→
+   227→- Sentry
+   228→- PostHog or equivalent
+   229→- Structured logs
+   230→- Database and API monitoring
+   231→- Cost tracking
+   232→
+   233→## Repository
+   234→
+   235→Create a maintainable monorepo:
+   236→
+   237→```text
+   238→shopnest/
+   239→  apps/
+   240→    mobile/
+   241→    admin/
+   242→  packages/
+   243→    shared/
+   244→    ui/
+   245→    database/
+   246→  supabase/
+   247→    migrations/
+   248→    functions/
+   249→    seed/
+   250→  docs/
+   251→  tests/
+   252→  scripts/
+   253→  .github/
+   254→    workflows/
+   255→```
+   256→
+   257→Use environment variables and proper secrets management.
+   258→
+   259→Never embed service-role keys or payment secrets inside the mobile application.
+   260→
+   261→---
+   262→
+   263→# 6. MVP — HIGHEST PRIORITY
+   264→
+   265→The first ShopNest release must provide a fully functional shared shopping experience.
+   266→
+   267→## Core MVP functionality
+   268→
+   269→- Account registration and login.
+   270→- Email verification.
+   271→- Apple and Google authentication.
+   272→- Household creation.
+   273→- Invite household members.
+   274→- Accept household invitations.
+   275→- Shared shopping lists.
+   276→- Real-time synchronization.
+   277→- Multiple stores.
+   278→- Item quantities and notes.
+   279→- Item photographs.
+   280→- Item-specific questions and replies.
+   281→- Purchased/unavailable/substituted status.
+   282→- Basic recurring items.
+   283→- Favorites.
+   284→- Shopping history.
+   285→- Offline shopping support.
+   286→- Basic notifications.
+   287→- Basic admin dashboard.
+   288→- Error monitoring.
+   289→
+   290→Do not delay the MVP to implement AI video calls, complex retailer inventory or checkout systems.
+   291→
+   292→---
+   293→
+   294→# 7. AUTHENTICATION AND HOUSEHOLDS
+   295→
+   296→Users must be able to:
+   297→
+   298→- Register.
+   299→- Verify their email.
+   300→- Sign in.
+   301→- Reset their password.
+   302→- Sign in with Apple.
+   303→- Sign in with Google.
+   304→- Create a household.
+   305→- Invite household members.
+   306→- Accept invitations.
+   307→- Manage members.
+   308→- Leave households.
+   309→- Delete accounts.
+   310→
+   311→Support household roles:
+   312→
+   313→- Owner
+   314→- Admin
+   315→- Member
+   316→
+   317→Households must be isolated from each other.
+   318→
+   319→A user may belong to multiple households.
+   320→
+   321→Invitation links must have expiration, revocation and abuse protection.
+   322→
+   323→All access control must be enforced server-side.
+   324→
+   325→---
+   326→
+   327→# 8. REAL-TIME SHOPPING LISTS
+   328→
+   329→This is ShopNest's most important feature.
+   330→
+   331→## Functional requirements
+   332→
+   333→Users can:
+   334→
+   335→- Create lists.
+   336→- Rename lists.
+   337→- Add products.
+   338→- Edit products.
+   339→- Delete products.
+   340→- Set quantities.
+   341→- Select units.
+   342→- Add notes.
+   343→- Attach photographs.
+   344→- Select stores.
+   345→- Categorize products.
+   346→- Mark items purchased.
+   347→- Mark items unavailable.
+   348→- Suggest substitutes.
+   349→- View purchase history.
+   350→- Reuse previous items.
+   351→
+   352→## Live synchronization
+   353→
+   354→If a household member adds milk at home, the shopper must see it without manually refreshing.
+   355→
+   356→If the shopper marks milk purchased, the person at home must see the change.
+   357→
+   358→Use Supabase Realtime.
+   359→
+   360→Implement:
+   361→
+   362→- Optimistic updates.
+   363→- Server-confirmed persistence.
+   364→- Automatic reconnect.
+   365→- Duplicate-event prevention.
+   366→- Idempotent mutations.
+   367→- Offline queues.
+   368→- Conflict resolution.
+   369→- Versioned records where appropriate.
+   370→- Synchronization status.
+   371→
+   372→Test with two independently authenticated devices.
+   373→
+   374→Do not silently overwrite important concurrent edits.
+   375→
+   376→---
+   377→
+   378→# 9. MULTI-STORE SHOPPING
+   379→
+   380→ShopNest must support multiple stores.
+   381→
+   382→Examples:
+   383→
+   384→- Walmart
+   385→- Costco
+   386→- Target
+   387→- Meijer
+   388→- Kroger
+   389→- Aldi
+   390→- Al Aqsa
+   391→- Halal markets
+   392→- Bangladeshi grocery stores
+   393→- Asian grocery stores
+   394→- Local butcher shops
+   395→- Fish markets
+   396→
+   397→## Features
+   398→
+   399→- Add a store.
+   400→- Save favorite stores.
+   401→- Search for stores.
+   402→- Assign products to stores.
+   403→- View shopping lists by store.
+   404→- Move items between stores.
+   405→- Save preferred stores for products.
+   406→- Remember previous store selections.
+   407→- Create custom stores.
+   408→- Store addresses and optional notes.
+   409→- Show all outstanding items across stores.
+   410→
+   411→Allow users to create a store manually without relying on Google Maps or another provider.
+   412→
+   413→Distinguish user-entered store information from verified external listings.
+   414→
+   415→---
+   416→
+   417→# 10. BANGLADESHI, HALAL AND SPECIALTY GROCERIES
+   418→
+   419→Support culturally diverse grocery shopping.
+   420→
+   421→Examples:
+   422→
+   423→- Hilsa fish
+   424→- Rohu fish
+   425→- Catla fish
+   426→- Halal chicken
+   427→- Halal beef
+   428→- Goat meat
+   429→- Basmati rice
+   430→- Mustard oil
+   431→- Green chilies
+   432→- Coriander
+   433→- Bottle gourd
+   434→- Bitter gourd
+   435→- Lentils
+   436→- Spices
+   437→
+   438→## Requirements
+   439→
+   440→- English product names.
+   441→- Bangla product names.
+   442→- Optional transliteration.
+   443→- Product photographs.
+   444→- Custom product categories.
+   445→- Preferred stores.
+   446→- Search aliases.
+   447→- Household-specific product catalogs.
+   448→- User-entered halal tags.
+   449→
+   450→Never claim a product is certified halal unless supported by a verified source.
+   451→
+   452→Design the database to support more languages later.
+   453→
+   454→---
+   455→
+   456→# 11. PHOTOS AND PRODUCT CONFIRMATION
+   457→
+   458→A shopper must be able to ask another household member about an item.
+   459→
+   460→Example:
+   461→
+   462→"Is this the correct cooking oil?"
+   463→
+   464→Attach one or more photographs to the shopping item.
+   465→
+   466→Other household members can:
+   467→
+   468→- Reply.
+   469→- Approve.
+   470→- Reject.
+   471→- Suggest another product.
+   472→- Add a comment.
+   473→
+   474→Store these discussions with the relevant item.
+   475→
+   476→Use private file storage.
+   477→
+   478→Compress images to control storage costs.
+   479→
+   480→## Later
+   481→
+   482→Add:
+   483→
+   484→- Voice messages.
+   485→- Audio calling.
+   486→- Video calling.
+   487→- More advanced product comparisons.
+   488→
+   489→Do not build a custom video-calling infrastructure for the MVP.
+   490→
+   491→---
+   492→
+   493→# 12. GPS AND STORE REMINDERS
+   494→
+   495→ShopNest should remember favorite store locations.
+   496→
+   497→## Initial release
+   498→
+   499→- Save store addresses.
+   500→- Open navigation apps.
+   501→- Show associated shopping lists.
+   502→- Allow manual store selection.
+   503→
+   504→## Later release
+   505→
+   506→- Optional location reminders.
+   507→- Geofencing.
+   508→- Notifications when approaching saved stores.
+   509→- Nearby specialty-store discovery.
+   510→
+   511→Example:
+   512→
+   513→"You have 4 outstanding items at Walmart."
+   514→
+   515→Location access must be optional.
+   516→
+   517→Do not track household members continuously.
+   518→
+   519→Do not expose one person's location to other household members by default.
+   520→
+   521→Follow Apple and Android permission requirements.
+   522→
+   523→---
+   524→
+   525→# 13. RECURRING HOUSEHOLD ITEMS
+   526→
+   527→Remember frequently purchased essentials.
+   528→
+   529→Examples:
+   530→
+   531→- Milk
+   532→- Bread
+   533→- Eggs
+   534→- Diapers
+   535→- Baby wipes
+   536→- Rice
+   537→- Cooking oil
+   538→- Detergent
+   539→- Toilet paper
+   540→
+   541→## Features
+   542→
+   543→- Favorite products.
+   544→- Recurring schedules.
+   545→- Last purchased dates.
+   546→- Preferred quantities.
+   547→- Preferred stores.
+   548→- One-tap re-add.
+   549→- Optional replenishment reminders.
+   550→- Shopping templates.
+   551→
+   552→Start with deterministic rules.
+   553→
+   554→Do not require paid AI APIs.
+   555→
+   556→Later, offer intelligent suggestions based on purchase history.
+   557→
+   558→---
+   559→
+   560→# 14. PARTIES AND EVENTS
+   561→
+   562→Allow families to organize shopping for events.
+   563→
+   564→Examples:
+   565→
+   566→- Birthdays
+   567→- Eid
+   568→- Ramadan
+   569→- Weddings
+   570→- Family dinners
+   571→- Barbecues
+   572→- Thanksgiving
+   573→- Christmas
+   574→- Baby showers
+   575→
+   576→## Features
+   577→
+   578→- Event creation.
+   579→- Event date.
+   580→- Guest count.
+   581→- Shopping checklist.
+   582→- Store assignments.
+   583→- Quantities.
+   584→- Estimated budget.
+   585→- Household task assignments.
+   586→- Event templates.
+   587→- Reuse previous event lists.
+   588→
+   589→Later, support recipe-based quantities and AI-assisted event planning.
+   590→
+   591→---
+   592→
+   593→# 15. RECEIPTS AND WARRANTY TRACKING
+   594→
+   595→Users should be able to organize household purchases.
+   596→
+   597→## Features
+   598→
+   599→- Upload receipt photographs.
+   600→- Record purchase dates.
+   601→- Record retailers.
+   602→- Record prices.
+   603→- Save product names.
+   604→- Store serial numbers.
+   605→- Save warranty documents.
+   606→- Set warranty expiry dates.
+   607→- Receive expiry reminders.
+   608→- Search purchase history.
+   609→
+   610→Keep receipts and warranty documents private.
+   611→
+   612→Use signed URLs and appropriate retention policies.
+   613→
+   614→## Future
+   615→
+   616→- OCR receipt scanning.
+   617→- Automatic product extraction.
+   618→- Warranty date detection.
+   619→- Household spending reports.
+   620→
+   621→Do not automatically send private receipts to third-party AI services without appropriate permission.
+   622→
+   623→---
+   624→
+   625→# 16. BARCODE SCANNING
+   626→
+   627→Add barcode scanning after the initial MVP.
+   628→
+   629→Users should be able to:
+   630→
+   631→- Scan product barcodes.
+   632→- Identify known products.
+   633→- Add products to lists.
+   634→- Save barcode references.
+   635→- Enter unknown products manually.
+   636→- Associate scanned items with preferred stores.
+   637→
+   638→Use authorized or licensed product data.
+   639→
+   640→Do not fabricate barcode results.
+   641→
+   642→Show price sources and timestamps when prices are available.
+   643→
+   644→---
+   645→
+   646→# 17. FUTURE SCAN-AND-PAY
+   647→
+   648→This is a long-term commercial feature.
+   649→
+   650→Desired workflow:
+   651→
+   652→1. Shopper scans products.
+   653→2. Products are added to a digital basket.
+   654→3. Verified prices are displayed.
+   655→4. Applicable taxes and discounts are calculated.
+   656→5. Shopper confirms checkout.
+   657→6. An authorized QR or checkout token is generated.
+   658→7. A participating retailer validates the transaction.
+   659→8. Payment is completed through an approved integration.
+   660→9. A receipt is issued.
+   661→
+   662→**Important:** ShopNest cannot independently introduce checkout functionality at Walmart, Costco or other retailers.
+   663→
+   664→Retailer authorization, POS integrations, payment agreements and fraud controls are required.
+   665→
+   666→Do not build a fake checkout system.
+   667→
+   668→Keep this feature disabled until suitable partnerships exist.
+   669→
+   670→---
+   671→
+   672→# 18. STORE INVENTORY AND AVAILABILITY
+   673→
+   674→ShopNest should eventually help customers identify which stores stock particular products.
+   675→
+   676→## Initial version
+   677→
+   678→- Remember where products were previously purchased.
+   679→- Allow users to mark products unavailable.
+   680→- Save alternative stores.
+   681→- Record user-reported availability.
+   682→- Show the timestamp and source of reports.
+   683→
+   684→## Later version
+   685→
+   686→- Authorized retailer inventory APIs.
+   687→- Retailer-managed catalogs.
+   688→- Verified availability.
+   689→- Community product reports.
+   690→- Specialty-store product discovery.
+   691→
+   692→Never label unverified reports as live inventory.
+   693→
+   694→Do not scrape retailer websites in violation of their terms.
+   695→
+   696→---
+   697→
+   698→# 19. SUBSCRIPTION AND REVENUE MODEL
+   699→
+   700→ShopNest must support a freemium business model.
+   701→
+   702→## Free plan
+   703→
+   704→Include:
+   705→
+   706→- Shared household lists.
+   707→- Real-time synchronization.
+   708→- Multiple stores.
+   709→- Basic photographs.
+   710→- Basic item discussions.
+   711→- Favorites.
+   712→- Basic recurring items.
+   713→- Shopping history.
+   714→
+   715→The free product must remain genuinely useful.
+   716→
+   717→## ShopNest Plus
+   718→
+   719→Proposed launch price:
+   720→
+   721→**$3.99/month per household**
+   722→
+   723→Potential premium features:
+   724→
+   725→- Advanced reminders.
+   726→- Expanded photo and receipt storage.
+   727→- Warranty tracking.
+   728→- Advanced event planning.
+   729→- Barcode productivity features.
+   730→- Household shopping insights.
+   731→- Premium templates.
+   732→
+   733→Support annual billing after pricing validation.
+   734→
+   735→## Subscription requirements
+   736→
+   737→- Native iOS billing.
+   738→- Native Android billing.
+   739→- Server-side entitlement validation.
+   740→- Restore purchases.
+   741→- Cancellation handling.
+   742→- Grace periods.
+   743→- Refund handling.
+   744→- Subscription status.
+   745→- Household-level premium access.
+   746→- Subscription audit events.
+   747→
+   748→Use RevenueCat where appropriate.
+   749→
+   750→Follow current Apple and Google payment policies.
+   751→
+   752→Do not activate paid subscriptions without explicit approval.
+   753→
+   754→## Future ShopNest Retailer Pro
+   755→
+   756→Potential starting price:
+   757→
+   758→$29/month per store, subject to validation.
+   759→
+   760→Future capabilities:
+   761→
+   762→- Store profiles.
+   763→- Product catalogs.
+   764→- Verified availability.
+   765→- Promotions.
+   766→- Store analytics.
+   767→- Customer discovery.
+   768→
+   769→Do not build the retailer portal before validating demand.
+   770→
+   771→---
+   772→
+   773→# 20. DATABASE ARCHITECTURE
+   774→
+   775→Create normalized PostgreSQL tables and version-controlled migrations.
+   776→
+   777→## Accounts
+   778→
+   779→- profiles
+   780→- households
+   781→- household_members
+   782→- household_invitations
+   783→- household_preferences
+   784→
+   785→## Shopping
+   786→
+   787→- shopping_lists
+   788→- shopping_items
+   789→- shopping_item_photos
+   790→- shopping_item_comments
+   791→- shopping_item_approvals
+   792→- shopping_item_activity
+   793→- household_products
+   794→- item_categories
+   795→- shopping_history
+   796→
+   797→## Stores
+   798→
+   799→- stores
+   800→- store_locations
+   801→- household_stores
+   802→- product_store_preferences
+   803→- store_availability_reports
+   804→
+   805→## Planning
+   806→
+   807→- recurring_item_rules
+   808→- shopping_templates
+   809→- template_items
+   810→- household_events
+   811→- event_items
+   812→- reminders
+   813→
+   814→## Purchases
+   815→
+   816→- purchases
+   817→- receipts
+   818→- warranties
+   819→- warranty_documents
+   820→
+   821→## Billing
+   822→
+   823→- subscription_accounts
+   824→- subscription_entitlements
+   825→- subscription_events
+   826→- billing_audit_events
+   827→
+   828→## Operations
+   829→
+   830→- notification_preferences
+   831→- push_tokens
+   832→- notification_deliveries
+   833→- support_tickets
+   834→- user_feedback
+   835→- admin_audit_logs
+   836→- system_events
+   837→
+   838→Use UUIDs where appropriate.
+   839→
+   840→Implement foreign keys, indexes, uniqueness constraints, timestamps and clear deletion rules.
+   841→
+   842→Every user-owned record must have an enforceable ownership or household authorization relationship.
+   843→
+   844→Implement Row-Level Security.
+   845→
+   846→Test cross-household isolation.
+   847→
+   848→---
+   849→
+   850→# 21. SECURITY AND PRIVACY
+   851→
+   852→Security requirements:
+   853→
+   854→- Supabase Row-Level Security.
+   855→- Secure authentication.
+   856→- Server-side authorization.
+   857→- Private storage buckets.
+   858→- Signed file URLs.
+   859→- File validation.
+   860→- Rate limiting.
+   861→- Safe account deletion.
+   862→- Secure session management.
+   863→- Proper secret handling.
+   864→- Audit logging.
+   865→- Subscription entitlement validation.
+   866→- Least-privilege access.
+   867→- Dependency security checks.
+   868→
+   869→Never expose Supabase service-role credentials in mobile code.
+   870→
+   871→Never rely on hidden UI elements to secure administrative functionality.
+   872→
+   873→Never expose private household lists to unrelated users.
+   874→
+   875→Provide clear privacy controls for photos, location, analytics and notifications.
+   876→
+   877→---
+   878→
+   879→# 22. ADMIN PORTAL
+   880→
+   881→Build a secure ShopNest Admin Portal using Next.js.
+   882→
+   883→Only authorized platform administrators may access it.
+   884→
+   885→## Dashboard
+   886→
+   887→Display:
+   888→
+   889→- Total registered users.
+   890→- Active users.
+   891→- New registrations.
+   892→- Total households.
+   893→- Active households.
+   894→- Shopping lists created.
+   895→- Items added.
+   896→- Daily active users.
+   897→- Weekly active users.
+   898→- Monthly active users.
+   899→- Free subscribers.
+   900→- Paying households.
+   901→- Monthly recurring revenue.
+   902→- Failed payments.
+   903→- Subscription cancellations.
+   904→- Storage usage.
+   905→- API costs where measurable.
+   906→- App errors.
+   907→- Support tickets.
+   908→
+   909→## User management
+   910→
+   911→Allow administrators to:
+   912→
+   913→- Search accounts.
+   914→- View registration dates.
+   915→- View account status.
+   916→- View last login when available.
+   917→- Review subscription status.
+   918→- Suspend accounts.
+   919→- Review support requests.
+   920→- Process deletion requests.
+   921→
+   922→Do not expose private shopping lists, photographs or receipts to administrators by default.
+   923→
+   924→## Billing management
+   925→
+   926→- Subscription status.
+   927→- Plan assignments.
+   928→- Payment-provider references.
+   929→- Refund and cancellation events.
+   930→- Entitlement history.
+   931→- Promotional access where permitted.
+   932→
+   933→## Operational monitoring
+   934→
+   935→- App crashes.
+   936→- Synchronization failures.
+   937→- Realtime connection errors.
+   938→- Failed uploads.
+   939→- Notification delivery issues.
+   940→- Database health.
+   941→- Storage usage.
+   942→- Service costs.
+   943→- Application versions.
+   944→
+   945→Display unavailable information honestly rather than inventing metrics.
+   946→
+   947→---
+   948→
+   949→# 23. ANALYTICS AND GROWTH
+   950→
+   951→Track privacy-conscious product analytics.
+   952→
+   953→Important events:
+   954→
+   955→- App registration.
+   956→- Household creation.
+   957→- Invitation sent.
+   958→- Invitation accepted.
+   959→- First shopping list created.
+   960→- First item added.
+   961→- First shared-list interaction.
+   962→- First completed shopping session.
+   963→- Return shopping sessions.
+   964→- Premium trial started.
+   965→- Subscription purchased.
+   966→- Subscription cancelled.
+   967→
+   968→Do not send private shopping item contents, personal messages, receipts or precise location data to analytics providers.
+   969→
+   970→## Key metrics
+   971→
+   972→- Activated households.
+   973→- Weekly active households.
+   974→- Day 7 retention.
+   975→- Day 30 retention.
+   976→- Free-to-paid conversion.
+   977→- MRR.
+   978→- Churn.
+   979→- Revenue per paying household.
+   980→- Infrastructure cost per active household.
+   981→
+   982→Define activation as at least two household members interacting with a shared shopping list.
+   983→
+   984→---
+   985→
+   986→# 24. UI AND USER EXPERIENCE
+   987→
+   988→Create a premium-quality mobile application.
+   989→
+   990→## Design principles
+   991→
+   992→- Simple.
+   993→- Fast.
+   994→- Modern.
+   995→- Clean.
+   996→- Family-friendly.
+   997→- Accessible.
+   998→- Easy to use while shopping.
+   999→- Minimal unnecessary navigation.
+  1000→
+  1001→Support light and dark modes.
+  1002→
+  1003→Use large, accessible shopping checkboxes.
+  1004→
+  1005→## Main navigation
+  1006→
+  1007→1. Home
+  1008→2. Shopping Lists
+  1009→3. Stores
+  1010→4. Planner
+  1011→5. Household
+  1012→
+  1013→## Home screen
+  1014→
+  1015→Display:
+  1016→
+  1017→- Current shopping lists.
+  1018→- Outstanding items.
+  1019→- Favorite stores.
+  1020→- Household activity.
+  1021→- Recurring essentials.
+  1022→- Upcoming events.
+  1023→- Quick Add button.
+  1024→
+  1025→## Shopping list screen
+  1026→
+  1027→Display:
+  1028→
+  1029→- List name.
+  1030→- Store.
+  1031→- Item name.
+  1032→- Quantity.
+  1033→- Notes.
+  1034→- Photograph.
+  1035→- Purchase checkbox.
+  1036→- Comments and confirmation status.
+  1037→- Last updated information.
+  1038→
+  1039→Prioritize fast entry and minimal taps.
+  1040→
+  1041→Support accessibility settings, Dynamic Type and screen readers.
+  1042→
+  1043→---
+  1044→
+  1045→# 25. NOTIFICATIONS
+  1046→
+  1047→Implement configurable notifications.
+  1048→
+  1049→Examples:
+  1050→
+  1051→- Household member requests product confirmation.
+  1052→- Shopping reminder.
+  1053→- Event reminder.
+  1054→- Warranty expiry.
+  1055→- Subscription issue.
+  1056→
+  1057→Avoid excessive notifications for every minor list edit.
+  1058→
+  1059→Support notification preferences and grouping.
+  1060→
+  1061→Use appropriate native notification permissions.
+  1062→
+  1063→---
+  1064→
+  1065→# 26. OFFLINE SUPPORT
+  1066→
+  1067→ShopNest must work in stores with poor cellular coverage.
+  1068→
+  1069→Implement:
+  1070→
+  1071→- Locally cached lists.
+  1072→- Offline item additions.
+  1073→- Offline item completion.
+  1074→- Offline editing.
+  1075→- Pending mutation queue.
+  1076→- Automatic retries.
+  1077→- Conflict handling.
+  1078→- Synchronization indicators.
+  1079→- Duplicate prevention.
+  1080→
+  1081→Test airplane-mode behavior.
+  1082→
+  1083→A local change must not be presented as synchronized until the server confirms it.
+  1084→
+  1085→---
+  1086→
+  1087→# 27. PERFORMANCE AND SCALABILITY
+  1088→
+  1089→Design ShopNest for gradual growth.
+  1090→
+  1091→Requirements:
+  1092→
+  1093→- Efficient database queries.
+  1094→- Indexed household queries.
+  1095→- Scoped Realtime subscriptions.
+  1096→- Pagination.
+  1097→- Image compression.
+  1098→- Lazy loading.
+  1099→- API rate limits.
+  1100→- Background processing where necessary.
+  1101→- Cost monitoring.
+  1102→- Storage quotas.
+  1103→- Error monitoring.
+  1104→
+  1105→Avoid premature microservices.
+  1106→
+  1107→Use a modular architecture that can scale as customer demand increases.
+  1108→
+  1109→---
+  1110→
+  1111→# 28. TESTING
+  1112→
+  1113→Implement automated and manual testing.
+  1114→
+  1115→## Unit tests
+  1116→
+  1117→- Item calculations.
+  1118→- Recurring schedules.
+  1119→- Input validation.
+  1120→- Subscription entitlements.
+  1121→- Shopping list sorting.
+  1122→- Conflict resolution.
+  1123→
+  1124→## Integration tests
+  1125→
+  1126→- Authentication.
+  1127→- Household invitations.
+  1128→- List synchronization.
+  1129→- Item updates.
+  1130→- File uploads.
+  1131→- Database permissions.
+  1132→- Billing webhooks.
+  1133→
+  1134→## End-to-end tests
+  1135→
+  1136→Test on iOS and Android:
+  1137→
+  1138→1. Register two users.
+  1139→2. Verify accounts.
+  1140→3. Create a household.
+  1141→4. Invite the second user.
+  1142→5. Accept the invitation.
+  1143→6. Create a shopping list.
+  1144→7. Add an item.
+  1145→8. Verify it appears on the second device.
+  1146→9. Mark it purchased.
+  1147→10. Verify the first device updates.
+  1148→11. Disconnect from the internet.
+  1149→12. Add an offline item.
+  1150→13. Reconnect.
+  1151→14. Verify synchronization.
+  1152→15. Upload a photograph.
+  1153→16. Sign out.
+  1154→17. Sign in.
+  1155→18. Confirm data persists.
+  1156→
+  1157→Use Maestro or a suitable equivalent.
+  1158→
+  1159→## Security tests
+  1160→
+  1161→- Cross-household data access.
+  1162→- Invalid invitation tokens.
+  1163→- Unauthorized file access.
+  1164→- Role escalation.
+  1165→- Expired sessions.
+  1166→- Malicious uploads.
+  1167→- Duplicate payment webhooks.
+  1168→
+  1169→Do not declare production readiness with unresolved critical vulnerabilities.
+  1170→
+  1171→---
+  1172→
+  1173→# 29. DEPLOYMENT
+  1174→
+  1175→Maintain separate environments:
+  1176→
+  1177→- Development
+  1178→- Staging
+  1179→- Production
+  1180→
+  1181→## iOS
+  1182→
+  1183→Prepare:
+  1184→
+  1185→- Apple bundle identifier.
+  1186→- App icon.
+  1187→- Splash screen.
+  1188→- Permissions.
+  1189→- EAS iOS build.
+  1190→- TestFlight distribution.
+  1191→- App Store metadata.
+  1192→
+  1193→## Android
+  1194→
+  1195→Prepare:
+  1196→
+  1197→- Android application ID.
+  1198→- App icon.
+  1199→- Splash screen.
+  1200→- Permissions.
+  1201→- EAS Android build.
+  1202→- Google Play internal testing.
+  1203→- Play Store metadata.
+  1204→
+  1205→## Compliance
+  1206→
+  1207→Prepare:
+  1208→
+  1209→- Privacy policy.
+  1210→- Terms of service.
+  1211→- Account deletion.
+  1212→- Subscription disclosures.
+  1213→- App privacy declarations.
+  1214→- Google Play Data Safety information.
+  1215→- Support contact details.
+  1216→
+  1217→Do not publish without explicit approval.
+  1218→
+  1219→---
+  1220→
+  1221→# 30. DEVELOPMENT ROADMAP
+  1222→
+  1223→## Phase 0 — Project foundation
+  1224→
+  1225→Target: 2–3 days.
+  1226→
+  1227→Build:
+  1228→
+  1229→- Repository.
+  1230→- Expo application.
+  1231→- Supabase configuration.
+  1232→- Database migrations.
+  1233→- Authentication.
+  1234→- Admin foundation.
+  1235→- CI checks.
+  1236→- Environment documentation.
+  1237→
+  1238→## Phase 1 — ShopNest MVP
+  1239→
+  1240→Target: 2–4 weeks, subject to implementation and testing.
+  1241→
+  1242→Build:
+  1243→
+  1244→- User accounts.
+  1245→- Households.
+  1246→- Invitations.
+  1247→- Live shopping lists.
+  1248→- Multi-store shopping.
+  1249→- Item photos.
+  1250→- Product questions.
+  1251→- Basic recurring items.
+  1252→- Offline synchronization.
+  1253→- Notifications.
+  1254→- Admin analytics.
+  1255→- Error monitoring.
+  1256→
+  1257→Deliver native test builds.
+  1258→
+  1259→## Phase 2 — ShopNest Plus
+  1260→
+  1261→Target: Weeks 5–8.
+  1262→
+  1263→Build:
+  1264→
+  1265→- Native subscriptions.
+  1266→- Premium entitlements.
+  1267→- Receipt management.
+  1268→- Warranty tracking.
+  1269→- Party planning.
+  1270→- Barcode scanning.
+  1271→- Advanced reminders.
+  1272→- Optional GPS store reminders.
+  1273→
+  1274→## Phase 3 — Shopping intelligence
+  1275→
+  1276→Target: Months 3–5.
+  1277→
+  1278→Build:
+  1279→
+  1280→- Advanced recurring suggestions.
+  1281→- Bangla/English catalog improvements.
+  1282→- Product search.
+  1283→- Household budgeting.
+  1284→- Product price history.
+  1285→- Store availability reports.
+  1286→- Approved retailer data integrations.
+  1287→
+  1288→## Phase 4 — ShopNest for Retailers
+  1289→
+  1290→Target: Months 5–9, conditional on retailer demand.
+  1291→
+  1292→Build:
+  1293→
+  1294→- Retailer accounts.
+  1295→- Store catalogs.
+  1296→- Verified inventory updates.
+  1297→- Promotions.
+  1298→- Retailer subscriptions.
+  1299→- Store analytics.
+  1300→
+  1301→## Phase 5 — Retailer Scan-and-Pay
+  1302→
+  1303→Only after retailer partnerships and approved payment integrations.
+  1304→
+  1305→Build:
+  1306→
+  1307→- Authorized basket creation.
+  1308→- Verified pricing.
+  1309→- POS integration.
+  1310→- QR checkout.
+  1311→- Payment processing.
+  1312→- Receipts.
+  1313→- Fraud controls.
+  1314→- Refund workflows.
+  1315→
+  1316→---
+  1317→
+  1318→# 31. COST MANAGEMENT
+  1319→
+  1320→ShopNest must be economical to operate.
+  1321→
+  1322→Track:
+  1323→
+  1324→- Database usage.
+  1325→- Storage usage.
+  1326→- Bandwidth.
+  1327→- Realtime connections.
+  1328→- Push notification services.
+  1329→- Authentication costs.
+  1330→- Image processing costs.
+  1331→- Error monitoring.
+  1332→- Subscription provider fees.
+  1333→- AI API usage if introduced later.
+  1334→
+  1335→Use free or low-cost tiers where appropriate.
+  1336→
+  1337→Set budget alerts and usage limits where supported.
+  1338→
+  1339→Do not assume that a monitoring alert automatically prevents spending.
+  1340→
+  1341→Do not enable expensive AI integrations by default.
+  1342→
+  1343→Provide cost reports in the admin portal using real service data where available.
+  1344→
+  1345→---
+  1346→
+  1347→# 32. DEVELOPMENT AGENT EXECUTION RULES
+  1348→
+  1349→Follow this process:
+  1350→
+  1351→1. Inspect the existing repository and environment.
+  1352→2. Identify available tools and credentials.
+  1353→3. Produce a concise implementation plan.
+  1354→4. Begin development.
+  1355→5. Implement complete vertical features.
+  1356→6. Run TypeScript, lint and automated tests.
+  1357→7. Fix errors.
+  1358→8. Verify real database functionality.
+  1359→9. Verify authorization and RLS.
+  1360→10. Test on actual devices or supported simulators.
+  1361→11. Document completed features.
+  1362→12. Continue to the next approved milestone.
+  1363→
+  1364→At each milestone, provide:
+  1365→
+  1366→- Features completed.
+  1367→- Tests passed.
+  1368→- Tests failed.
+  1369→- Known bugs.
+  1370→- Outstanding integrations.
+  1371→- Required external credentials.
+  1372→- Running costs.
+  1373→- Next tasks.
+  1374→
+  1375→Do not claim that an iOS or Android build was tested if the necessary build environment was unavailable.
+  1376→
+  1377→Do not use simulated data in production interfaces unless explicitly labeled as a demo.
+  1378→
+  1379→Continue development without unnecessary approval requests, subject to the authorization restrictions in Section 1.
+  1380→
+  1381→---
+  1382→
+  1383→# 33. REQUIRED DOCUMENTATION
+  1384→
+  1385→Create:
+  1386→
+  1387→```text
+  1388→README.md
+  1389→docs/ARCHITECTURE.md
+  1390→docs/DATABASE.md
+  1391→docs/SECURITY.md
+  1392→docs/FEATURES.md
+  1393→docs/ROADMAP.md
+  1394→docs/TESTING.md
+  1395→docs/DEPLOYMENT.md
+  1396→docs/BILLING.md
+  1397→docs/ADMIN.md
+  1398→docs/ANALYTICS.md
+  1399→docs/API_INTEGRATIONS.md
+  1400→docs/COST_TRACKING.md
+  1401→docs/RELEASE_CHECKLIST.md
+  1402→```
+  1403→
+  1404→Documentation must be understandable to a founder with limited programming experience.
+  1405→
+  1406→Explain exactly which services require configuration, accounts, credentials or payment.
+  1407→
+  1408→---
+  1409→
+  1410→# 34. MVP ACCEPTANCE CRITERIA
+  1411→
+  1412→ShopNest MVP is complete only when:
+  1413→
+  1414→- Two users can register.
+  1415→- Both can join the same household.
+  1416→- Both can access the same shopping list.
+  1417→- List changes synchronize in real time.
+  1418→- Users can organize products by store.
+  1419→- Users can attach item photographs.
+  1420→- Users can discuss and confirm products.
+  1421→- Users can mark items purchased.
+  1422→- Users can save recurring essentials.
+  1423→- Offline shopping works.
+  1424→- Offline changes synchronize after reconnection.
+  1425→- Household data remains private.
+  1426→- Admin metrics use real data.
+  1427→- Errors are monitored.
+  1428→- Native iOS and Android test builds are available.
+  1429→- No unresolved critical security issues remain.
+  1430→
+  1431→---
+  1432→
+  1433→# 35. FINAL INSTRUCTION — BEGIN SHOPNEST DEVELOPMENT
+  1434→
+  1435→**Build ShopNest now.**
+  1436→
+  1437→Prioritize a real, secure, fast, reliable native shopping app that families can use together.
+  1438→
+  1439→Do not waste development time on features that are unnecessary for the first launch.
+  1440→
+  1441→Do not stop at a prototype.
+  1442→
+  1443→Implement the backend, database, mobile applications, authentication, household collaboration, real-time synchronization, offline support, admin portal, testing and build configuration.
+  1444→
+  1445→Prepare the product for a small private beta first.
+  1446→
+  1447→Once the MVP passes acceptance testing, continue with approved Phase 2 work.
+  1448→
+  1449→The commercial goal is to attract real households, achieve strong retention, introduce useful premium features and establish sustainable monthly recurring revenue.
+  1450→
+  1451→**Start with Phase 0 and Phase 1 immediately.**
+  1452→
