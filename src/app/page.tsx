@@ -1,8 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { useMe } from '@/lib/shopnest/hooks'
+import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query'
+import { useMe, qk } from '@/lib/shopnest/hooks'
 import { AuthScreen } from '@/components/shopnest/auth-screen'
 import { AppShell } from '@/components/shopnest/app-shell'
 
@@ -27,6 +27,7 @@ export default function Page() {
 }
 
 function ShopNest() {
+  const queryClient = useQueryClient()
   const { data, isLoading } = useMe()
   const authed = !!data?.user
 
@@ -43,5 +44,15 @@ function ShopNest() {
     )
   }
 
-  return authed ? <AppShell /> : <AuthScreen onAuthed={() => window.location.reload()} />
+  return authed ? (
+    <AppShell />
+  ) : (
+    <AuthScreen
+      onAuthed={() => {
+        // re-fetch /api/auth/me — the session now also lives in localStorage
+        // (Bearer token), so this works even if cookies are blocked
+        queryClient.invalidateQueries({ queryKey: qk.me })
+      }}
+    />
+  )
 }

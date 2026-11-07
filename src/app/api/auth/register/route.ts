@@ -40,8 +40,8 @@ export async function POST(req: Request) {
       },
     })
 
-    await createSession(user.id)
-    return Response.json({ user: { id: user.id, email: user.email, name: user.name, isAdmin: user.isAdmin } }, { status: 201 })
+    const token = await createSession(user.id)
+    return Response.json({ user: { id: user.id, email: user.email, name: user.name, isAdmin: user.isAdmin }, token }, { status: 201 })
   } catch (error) {
     return jsonError(error)
   }

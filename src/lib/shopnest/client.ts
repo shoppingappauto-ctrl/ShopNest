@@ -36,7 +36,48 @@ export type QueuedMutation = {
 }
 
 const QUEUE_KEY = 'shopnest_pending_queue'
+const TOKEN_KEY = 'shopnest_session_token'
 const listeners = new Set<() => void>()
+
+/**
+ * Session token fallback (localStorage).
+ *
+ * The preview UI often renders the app inside a cross-origin iframe where
+ * browsers block third-party cookies — the Set-Cookie from /api/auth/login
+ * would silently vanish and every login would "bounce" back to the sign-in
+ * screen. The auth APIs therefore also return the session token, which we
+ * persist here and attach as `Authorization: Bearer <token>` to every
+ * request. The server accepts either the header or the cookie.
+ */
+export function getSessionToken(): string | null {
+  if (typeof window === 'undefined') return null
+  try {
+    return window.localStorage.getItem(TOKEN_KEY)
+  } catch {
+    return null
+  }
+}
+
+export function setSessionToken(token: string) {
+  try {
+    window.localStorage.setItem(TOKEN_KEY, token)
+  } catch {
+    // storage unavailable — cookie path still works when not blocked
+  }
+}
+
+export function clearSessionToken() {
+  try {
+    window.localStorage.removeItem(TOKEN_KEY)
+  } catch {
+    // ignore
+  }
+}
+
+function authHeaders(): Record<string, string> {
+  const token = getSessionToken()
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
 
 export function getQueue(): QueuedMutation[] {
   if (typeof window === 'undefined') return []
@@ -76,7 +117,10 @@ export async function flushQueue(): Promise<number> {
       try {
         const res = await fetch(m.url, {
           method: m.method,
-          headers: m.body !== undefined ? { 'Content-Type': 'application/json' } : undefined,
+          headers: {
+            ...authHeaders(),
+            ...(m.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+          },
           body: m.body !== undefined ? JSON.stringify(m.body) : undefined,
         })
         if (res.ok || (res.status >= 400 && res.status < 500 && res.status !== 408)) {
@@ -113,7 +157,10 @@ export async function api<T = unknown>(url: string, opts: ApiOptions = {}): Prom
   try {
     res = await fetch(url, {
       method,
-      headers: opts.body !== undefined ? { 'Content-Type': 'application/json' } : undefined,
+      headers: {
+        ...authHeaders(),
+        ...(opts.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+      },
       body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
     })
   } catch {
@@ -138,6 +185,14 @@ export async function api<T = unknown>(url: string, opts: ApiOptions = {}): Prom
         : `Request failed (${res.status})`
     throw new ApiClientError(res.status, message)
   }
+
+  // successful auth response → persist the session token (iframe-safe fallback)
+  if (res.ok && data && typeof data === 'object' && 'token' in data) {
+    const token = (data as { token?: unknown }).token
+    if (typeof token === 'string' && token.length > 0) setSessionToken(token)
+  }
+  // logout → drop the stored token
+  if (res.ok && url.includes('/api/auth/logout')) clearSessionToken()
 
   // successful mutation → try flushing anything pending
   if (method !== 'GET' && getQueue().length > 0) {

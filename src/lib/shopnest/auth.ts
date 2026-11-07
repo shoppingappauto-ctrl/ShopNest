@@ -1,4 +1,4 @@
-import { cookies } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 import { db } from '@/lib/db'
 import bcrypt from 'bcryptjs'
 
@@ -33,29 +33,68 @@ export async function createSession(userId: string): Promise<string> {
   const expiresAt = new Date(Date.now() + SESSION_TTL_DAYS * 24 * 60 * 60 * 1000)
   await db.session.create({ data: { id: token, userId, expiresAt } })
   const store = await cookies()
+  // The app is commonly displayed inside a cross-origin preview iframe where
+  // browsers block ordinary (SameSite=Lax) cookies — which previously made
+  // every login silently fail. Two mitigations:
+  //  1. CHIPS partitioned cookie (SameSite=None; Secure; Partitioned) so the
+  //     cookie survives even when third-party cookies are otherwise blocked.
+  //  2. The API also returns the token in the JSON body and the client sends
+  //     it as an Authorization: Bearer header (see lib/shopnest/client.ts).
   store.set(SESSION_COOKIE, token, {
     httpOnly: true,
-    sameSite: 'lax',
-    secure: false, // sandbox preview is served over http via the gateway
+    sameSite: 'none',
+    secure: true, // required for SameSite=None; localhost is exempt in all major browsers
     path: '/',
     maxAge: SESSION_TTL_DAYS * 24 * 60 * 60,
-  })
+    partitioned: true,
+  } as Parameters<typeof store.set>[2])
   return token
 }
 
 export async function destroySession(): Promise<void> {
-  const store = await cookies()
-  const token = store.get(SESSION_COOKIE)?.value
+  // resolve the token from the Authorization header or the cookie
+  let token: string | undefined
+  try {
+    const h = await headers()
+    const auth = h.get('authorization')
+    if (auth?.startsWith('Bearer ')) token = auth.slice(7).trim() || undefined
+  } catch {
+    // headers() unavailable — cookie-only
+  }
+  if (!token) {
+    const store = await cookies()
+    token = store.get(SESSION_COOKIE)?.value
+  }
   if (token) {
     await db.session.deleteMany({ where: { id: token } })
   }
-  store.set(SESSION_COOKIE, '', { httpOnly: true, path: '/', maxAge: 0 })
+  const store = await cookies()
+  store.set(SESSION_COOKIE, '', {
+    httpOnly: true,
+    sameSite: 'none',
+    secure: true,
+    partitioned: true,
+    path: '/',
+    maxAge: 0,
+  } as Parameters<typeof store.set>[2])
 }
 
 /** Returns the authenticated user for the current request, or null. */
 export async function getSessionUser(): Promise<SessionUser | null> {
-  const store = await cookies()
-  const token = store.get(SESSION_COOKIE)?.value
+  // Prefer the Authorization header (works even when the iframe environment
+  // blocks cookies entirely), then fall back to the session cookie.
+  let token: string | undefined
+  try {
+    const h = await headers()
+    const auth = h.get('authorization')
+    if (auth?.startsWith('Bearer ')) token = auth.slice(7).trim() || undefined
+  } catch {
+    // headers() unavailable in this context — cookie-only
+  }
+  if (!token) {
+    const store = await cookies()
+    token = store.get(SESSION_COOKIE)?.value
+  }
   if (!token) return null
 
   const session = await db.session.findUnique({

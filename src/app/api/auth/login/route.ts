@@ -19,8 +19,8 @@ export async function POST(req: Request) {
       throw new ApiError(403, 'This account has been suspended. Contact support.')
     }
     await db.user.update({ where: { id: user.id }, data: { lastActiveAt: new Date() } })
-    await createSession(user.id)
-    return Response.json({ user: { id: user.id, email: user.email, name: user.name, isAdmin: user.isAdmin } })
+    const token = await createSession(user.id)
+    return Response.json({ user: { id: user.id, email: user.email, name: user.name, isAdmin: user.isAdmin }, token })
   } catch (error) {
     return jsonError(error)
   }
