@@ -52,3 +52,9 @@ prompt
 server.log
 # Skills directory
 /skills/
+
+# Sandbox session artifacts (agent tool output, pastes, downloads — not app code)
+/tool-results/
+/agent-ctx/
+/download/
+/upload/
