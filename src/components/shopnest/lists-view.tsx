@@ -21,7 +21,7 @@ import { STORE_CATEGORY_EMOJI } from '@/lib/shopnest/constants'
 import type { Me, ShoppingList } from '@/lib/shopnest/types'
 import { ListDetail } from '@/components/shopnest/list-detail'
 
-export function ListsView({ householdId, me }: { householdId: string; me: Me }) {
+export function ListsView({ householdId, me, onStartShopping }: { householdId: string; me: Me; onStartShopping?: (listId?: string | null) => void }) {
   const listsQ = useLists(householdId)
   const storesQ = useStores(householdId)
   const createList = useCreateList(householdId)
@@ -72,7 +72,7 @@ export function ListsView({ householdId, me }: { householdId: string; me: Me }) 
   }
 
   if (openList) {
-    return <ListDetail listId={openList.id} me={me} householdId={householdId} onBack={closeList} />
+    return <ListDetail listId={openList.id} me={me} householdId={householdId} onBack={closeList} onStartShopping={onStartShopping} />
   }
 
   return (

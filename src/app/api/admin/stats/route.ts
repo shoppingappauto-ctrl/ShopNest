@@ -42,6 +42,34 @@ export async function GET() {
 
     const mrr = plusHouseholds * PLUS_PRICE_PER_MONTH
 
+    // ── V2 feature metrics (all from real data; never fabricated) ──────────
+    const [shoppingSessionsStarted, shoppingSessionsCompleted, confirmationRequests, confirmationsDecided, budgets, priceObservations, pantryItems, events, templates, caregiverMembers] =
+      await Promise.all([
+        db.shoppingSession.count(),
+        db.shoppingSession.count({ where: { status: 'FINISHED' } }),
+        db.itemConfirmationRequest.count(),
+        db.itemConfirmationRequest.count({ where: { status: { in: ['APPROVED', 'REJECTED', 'SUBSTITUTE_SUGGESTED'] } } }),
+        db.shoppingBudget.count(),
+        db.priceObservation.count(),
+        db.pantryItem.count(),
+        db.householdEvent.count(),
+        db.householdEvent.count({ where: { isTemplate: true } }),
+        db.householdMember.count({ where: { role: 'CAREGIVER' } }),
+      ])
+    // average confirmation response time (decided requests only)
+    const decided = await db.itemConfirmationRequest.findMany({
+      where: { decidedAt: { not: null } },
+      select: { createdAt: true, decidedAt: true },
+      take: 500,
+      orderBy: { createdAt: 'desc' },
+    })
+    const avgConfirmationMinutes =
+      decided.length > 0
+        ? Math.round(decided.reduce((s, r) => s + (r.decidedAt!.getTime() - r.createdAt.getTime()), 0) / decided.length / 60000)
+        : null
+    // quality signals
+    const pendingConfirmations = await db.itemConfirmationRequest.count({ where: { status: 'PENDING' } })
+
     return Response.json({
       users: { total: totalUsers, suspended: suspendedUsers, newThisWeek: newUsersWeek },
       households: { total: totalHouseholds, plus: plusHouseholds, free: totalHouseholds - plusHouseholds },
@@ -54,6 +82,21 @@ export async function GET() {
         note: 'Payments are disabled in this build; MRR reflects plan flags only.',
       },
       storage: { photos, bytes: storageBytes },
+      v2: {
+        shoppingSessionsStarted,
+        shoppingSessionsCompleted,
+        confirmationRequests,
+        confirmationsDecided,
+        pendingConfirmations,
+        avgConfirmationMinutes,
+        budgets,
+        priceObservations,
+        pantryItems,
+        events,
+        eventTemplates: templates,
+        caregiverMembers,
+        note: 'Voice-add and photo-upload error metrics require client telemetry, not yet implemented in this build.',
+      },
       meta: { generatedAt: new Date().toISOString() },
     })
   } catch (error) {

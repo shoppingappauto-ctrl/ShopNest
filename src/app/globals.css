@@ -147,3 +147,11 @@
     padding-bottom: 0;
   }
 }
+
+/* ── V2: large-text accessibility mode (caregiver/elderly friendly) ──────── */
+[data-large-text='true'] {
+  font-size: 18px; /* scales every rem-based Tailwind size upward */
+}
+[data-large-text='true'] .shopping-row {
+  min-height: 4.5rem;
+}

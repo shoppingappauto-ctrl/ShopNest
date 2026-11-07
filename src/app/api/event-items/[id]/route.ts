@@ -13,6 +13,8 @@ const patchSchema = z.object({
   unit: z.enum(UNITS).optional(),
   category: z.enum(ITEM_CATEGORIES).optional(),
   isDone: z.boolean().optional(),
+  storeId: z.string().trim().optional().nullable(),
+  assignedToId: z.string().trim().optional().nullable(),
 })
 
 export async function PATCH(req: Request, { params }: Params) {
@@ -27,7 +29,16 @@ export async function PATCH(req: Request, { params }: Params) {
     await requireHouseholdAccess(user.id, item.event.householdId)
 
     const data = await parseBody(req, patchSchema)
-    const updated = await db.eventItem.update({ where: { id }, data })
+    if (data.assignedToId) {
+      const member = await db.householdMember.findFirst({
+        where: { userId: data.assignedToId, householdId: item.event.householdId },
+      })
+      if (!member) throw new ApiError(404, 'Assignee must be a member of this household.')
+    }
+    const patch: Record<string, unknown> = { ...data }
+    if (data.storeId !== undefined) patch.storeId = data.storeId || null
+    if (data.assignedToId !== undefined) patch.assignedToId = data.assignedToId || null
+    const updated = await db.eventItem.update({ where: { id }, data: patch })
     broadcastHousehold(item.event.householdId, 'events:changed')
     return Response.json({ item: updated })
   } catch (error) {

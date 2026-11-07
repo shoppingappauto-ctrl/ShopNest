@@ -14,9 +14,12 @@ const createSchema = z.object({
   unit: z.enum(UNITS).default('pc'),
   note: z.string().trim().max(300).optional().nullable(),
   category: z.enum(ITEM_CATEGORIES).default('OTHER'),
+  // storeId semantics: omitted/undefined → inherit the list's default store;
+  // null → explicitly unassigned; string → that store
   storeId: z.string().trim().optional().nullable(),
   favoriteProductId: z.string().trim().optional().nullable(),
   isRecurring: z.boolean().default(false),
+  estimatedPriceCents: z.number().int().min(0).max(100_000_000).optional().nullable(),
 })
 
 export async function POST(req: Request, { params }: Params) {
@@ -30,9 +33,12 @@ export async function POST(req: Request, { params }: Params) {
 
     const data = await parseBody(req, createSchema)
 
-    // validate store & favorite product belong to this household
-    if (data.storeId) {
-      const store = await db.store.findFirst({ where: { id: data.storeId, householdId: list.householdId } })
+    // canonical store assignment: explicit store wins, otherwise inherit the
+    // list's default store as a *default* for the new item (per-item override
+    // remains fully editable afterwards)
+    const resolvedStoreId = data.storeId !== undefined ? data.storeId || null : list.storeId || null
+    if (resolvedStoreId) {
+      const store = await db.store.findFirst({ where: { id: resolvedStoreId, householdId: list.householdId } })
       if (!store) throw new ApiError(404, 'Store not found in this household.')
     }
     if (data.favoriteProductId) {
@@ -52,9 +58,10 @@ export async function POST(req: Request, { params }: Params) {
         unit: data.unit,
         note: data.note || null,
         category: data.category,
-        storeId: data.storeId || null,
+        storeId: resolvedStoreId,
         favoriteProductId: data.favoriteProductId || null,
         isRecurring: data.isRecurring,
+        estimatedPriceCents: data.estimatedPriceCents ?? null,
         addedById: user.id,
       },
       include: {
@@ -64,15 +71,11 @@ export async function POST(req: Request, { params }: Params) {
     })
 
     // bump household catalog stats when re-added from the catalog
-    if (data.favoriteProductId) {
-      await db.householdProduct.update({
-        where: { id: data.favoriteProductId },
-        data: { timesPurchased: { increment: 0 } }, // purchased count increments on purchase
-      }).catch(() => {})
-    }
+    // (timesPurchased increments on purchase — nothing to do at add time)
 
     logActivity(list.householdId, user.id, 'ITEM_ADDED', `${user.name} added “${item.name}” to ${list.name}.`)
     broadcastHousehold(list.householdId, 'items:changed')
+    broadcastHousehold(list.householdId, 'stores:changed')
     broadcastHousehold(list.householdId, 'activity:changed')
 
     return Response.json({ item }, { status: 201 })

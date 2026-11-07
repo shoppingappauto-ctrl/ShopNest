@@ -35,9 +35,11 @@ export function logActivity(
 
 const MAX_PHOTO_BYTES = 700_000 // ~700KB base64 data URL per photo (client compresses before upload)
 
+const RASTER_MIME = /^data:image\/(png|jpe?g|webp|gif);base64,/
+
 export function validatePhotoDataUrl(dataUrl: string): string {
-  if (!dataUrl.startsWith('data:image/')) {
-    throw new Error('Photo must be an image data URL.')
+  if (!RASTER_MIME.test(dataUrl)) {
+    throw new Error('Photo must be a PNG, JPEG, WebP or GIF image.')
   }
   if (dataUrl.length > MAX_PHOTO_BYTES) {
     throw new Error('Photo is too large (max ~500KB after compression).')

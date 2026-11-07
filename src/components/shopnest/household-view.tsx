@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -33,7 +33,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Copy, RefreshCcw, LogOut, Plus, Users, Crown, Shield, MoreHorizontal, Home, UserMinus, Sparkles, Trash2 } from 'lucide-react'
+import { Copy, RefreshCcw, LogOut, Plus, Users, Crown, Shield, MoreHorizontal, Home, UserMinus, Sparkles, Trash2, HeartHandshake } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
   useMe,
@@ -52,6 +52,7 @@ import { toast } from '@/hooks/use-toast'
 import { UserChip, timeAgo } from '@/components/shopnest/ui-bits'
 import { PlusDialog } from '@/components/shopnest/plus-dialog'
 import type { Tab } from '@/components/shopnest/app-shell'
+import { useUpdatePrefs } from '@/lib/shopnest/hooks'
 
 export function HouseholdView({
   tab,
@@ -71,19 +72,39 @@ function HouseholdSettings({ needsHousehold, setTab }: { needsHousehold?: boolea
   const me = meQ.data?.user
   const households = meQ.data?.households ?? []
 
+  // V2: consume the pending invite saved by the auth screen deep link (?invite=SN-XXXXXX)
+  const [pendingInvite] = useState(() => {
+    if (typeof window === 'undefined') return null
+    const v = window.localStorage.getItem('shopnest_pending_invite')
+    return v && /^SN-[A-Z0-9]{6}$/i.test(v) ? v.toUpperCase() : null
+  })
+  const [inviteCode, setInviteCode] = useState(pendingInvite ?? '')
+  useEffect(() => {
+    if (pendingInvite) window.localStorage.removeItem('shopnest_pending_invite')
+  }, [pendingInvite])
+  const [joinOpen, setJoinOpen] = useState(!!pendingInvite)
   const [createOpen, setCreateOpen] = useState(needsHousehold)
-  const [joinOpen, setJoinOpen] = useState(false)
   const [newName, setNewName] = useState('')
-  const [inviteCode, setInviteCode] = useState('')
   const [leaveConfirm, setLeaveConfirm] = useState<string | null>(null)
   const [deleteAccountOpen, setDeleteAccountOpen] = useState(false)
   const [renameOpen, setRenameOpen] = useState(false)
   const [renameValue, setRenameValue] = useState('')
   const [plusOpen, setPlusOpen] = useState(false)
 
-  const [notifyList, setNotifyList] = useState(true)
-  const [notifyPurchases, setNotifyPurchases] = useState(true)
-  const [notifyEvents, setNotifyEvents] = useState(true)
+  // V2: notification preferences are persisted to the server (was decorative state)
+  const updatePrefs = useUpdatePrefs()
+  const myPrefs = (() => {
+    try {
+      const parsed = me?.notifyPrefs ? JSON.parse(me.notifyPrefs) : {}
+      return { reminders: true, comments: true, purchases: true, ...parsed }
+    } catch {
+      return { reminders: true, comments: true, purchases: true }
+    }
+  })()
+  const [notifyList, setNotifyList] = useState(myPrefs.reminders)
+  const [notifyPurchases, setNotifyPurchases] = useState(myPrefs.purchases)
+  const [notifyEvents, setNotifyEvents] = useState(myPrefs.comments)
+  const [largeText, setLargeText] = useState(me?.largeText ?? false)
 
   const createHousehold = useCreateHousehold()
   const joinHousehold = useJoinHousehold()
@@ -222,6 +243,7 @@ function HouseholdSettings({ needsHousehold, setTab }: { needsHousehold?: boolea
                       <p className="text-xs text-muted-foreground truncate">{m.user.email} · joined {timeAgo(m.joinedAt)}</p>
                     </div>
                     <Badge variant="outline" className="shrink-0">{m.role.toLowerCase()}</Badge>
+                        {m.role === 'CAREGIVER' && <span className="text-xs text-muted-foreground shrink-0">shops for family</span>}
                     {isManager && m.role !== 'OWNER' && m.user.id !== me?.id && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -233,6 +255,10 @@ function HouseholdSettings({ needsHousehold, setTab }: { needsHousehold?: boolea
                           <DropdownMenuItem onClick={() => changeRole.mutate({ memberId: m.id, role: m.role === 'ADMIN' ? 'MEMBER' : 'ADMIN' })}>
                             <Shield className="mr-2 h-4 w-4" />
                             {m.role === 'ADMIN' ? 'Demote to member' : 'Promote to admin'}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => changeRole.mutate({ memberId: m.id, role: m.role === 'CAREGIVER' ? 'MEMBER' : 'CAREGIVER' })}>
+                            <HeartHandshake className="mr-2 h-4 w-4" />
+                            {m.role === 'CAREGIVER' ? 'Remove caregiver access' : 'Set as caregiver'}
                           </DropdownMenuItem>
                           <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => removeMember.mutate({ memberId: m.id })}>
                             <UserMinus className="mr-2 h-4 w-4" /> Remove from household
@@ -284,7 +310,7 @@ function HouseholdSettings({ needsHousehold, setTab }: { needsHousehold?: boolea
                   <Label htmlFor="nf-1" className="text-sm">Product confirmation requests</Label>
                   <p className="text-xs text-muted-foreground">When someone asks “is this the right product?”</p>
                 </div>
-                <Switch id="nf-1" checked={notifyList} onCheckedChange={setNotifyList} />
+                <Switch id="nf-1" checked={notifyList} onCheckedChange={(v) => { setNotifyList(v); updatePrefs.mutate({ notifyPrefs: { reminders: v } }) }} />
               </div>
               <Separator />
               <div className="flex items-center justify-between">
@@ -292,7 +318,7 @@ function HouseholdSettings({ needsHousehold, setTab }: { needsHousehold?: boolea
                   <Label htmlFor="nf-2" className="text-sm">Purchases</Label>
                   <p className="text-xs text-muted-foreground">When items are marked purchased.</p>
                 </div>
-                <Switch id="nf-2" checked={notifyPurchases} onCheckedChange={setNotifyPurchases} />
+                <Switch id="nf-2" checked={notifyPurchases} onCheckedChange={(v) => { setNotifyPurchases(v); updatePrefs.mutate({ notifyPrefs: { purchases: v } }) }} />
               </div>
               <Separator />
               <div className="flex items-center justify-between">
@@ -300,7 +326,24 @@ function HouseholdSettings({ needsHousehold, setTab }: { needsHousehold?: boolea
                   <Label htmlFor="nf-3" className="text-sm">Event reminders</Label>
                   <p className="text-xs text-muted-foreground">Upcoming household events.</p>
                 </div>
-                <Switch id="nf-3" checked={notifyEvents} onCheckedChange={setNotifyEvents} />
+                <Switch id="nf-3" checked={notifyEvents} onCheckedChange={(v) => { setNotifyEvents(v); updatePrefs.mutate({ notifyPrefs: { comments: v } }) }} />
+                {/* V2: large-text accessibility (persisted) */}
+                <div className="flex items-center justify-between gap-4 pt-1 border-t">
+                  <div>
+                    <Label htmlFor="nf-4" className="text-sm">Large text mode</Label>
+                    <p className="text-xs text-muted-foreground">Bigger text everywhere — easier for grandparents and caregivers.</p>
+                  </div>
+                  <Switch
+                    id="nf-4"
+                    checked={largeText}
+                    onCheckedChange={(v) => {
+                      setLargeText(v)
+                      updatePrefs.mutate({ largeText: v })
+                      // reflect immediately for the current session
+                      document.documentElement.style.fontSize = v ? '18px' : ''
+                    }}
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>

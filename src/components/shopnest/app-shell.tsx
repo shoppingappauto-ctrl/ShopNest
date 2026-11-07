@@ -18,6 +18,7 @@ import { StoresView } from '@/components/shopnest/stores-view'
 import { PlannerView } from '@/components/shopnest/planner-view'
 import { HouseholdView } from '@/components/shopnest/household-view'
 import { AdminView } from '@/components/shopnest/admin-view'
+import { ShoppingMode } from '@/components/shopnest/shopping-mode'
 
 export type Tab = 'home' | 'lists' | 'stores' | 'planner' | 'household' | 'admin'
 
@@ -62,6 +63,9 @@ export function AppShell() {
 
   const currentHousehold = households.find((h) => h.id === householdId) ?? null
 
+  // Shopping Mode (V2 P0): full-screen overlay above everything
+  const [shopping, setShopping] = useState<{ open: boolean; listId: string | null }>({ open: false, listId: null })
+
   if (isLoading || (!me && households.length === 0 && meData === undefined)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -98,7 +102,10 @@ export function AppShell() {
   )
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div
+      className="min-h-screen flex flex-col bg-background"
+      data-large-text={me.largeText ? 'true' : 'false'}
+    >
       {/* Header */}
       <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/75">
         <div className="mx-auto max-w-6xl px-3 sm:px-5 h-14 flex items-center gap-2 sm:gap-3">
@@ -220,9 +227,18 @@ export function AppShell() {
           {!currentHousehold ? (
             <HouseholdView tab={tab} setTab={setTab} needsHousehold />
           ) : tab === 'home' ? (
-            <HomeView householdId={currentHousehold.id} me={me} onOpenTab={setTab} />
+            <HomeView
+              householdId={currentHousehold.id}
+              me={me}
+              onOpenTab={setTab}
+              onStartShopping={(listId) => setShopping({ open: true, listId: listId ?? null })}
+            />
           ) : tab === 'lists' ? (
-            <ListsView householdId={currentHousehold.id} me={me} />
+            <ListsView
+              householdId={currentHousehold.id}
+              me={me}
+              onStartShopping={(listId) => setShopping({ open: true, listId: listId ?? null })}
+            />
           ) : tab === 'stores' ? (
             <StoresView householdId={currentHousehold.id} me={me} />
           ) : tab === 'planner' ? (
@@ -238,12 +254,21 @@ export function AppShell() {
             <div className="mx-auto max-w-6xl px-4 py-4 text-center text-xs text-muted-foreground flex flex-col sm:flex-row items-center justify-between gap-1.5">
               <p>ShopNest — Your Family. Your Shopping. One Place.</p>
               <p>
-                Payments are disabled in this build · Support: support@shopnest.app · v1.0.0-MVP
+                Payments are disabled in this build · Support: support@shopnest.app · v2.0.0
               </p>
             </div>
           </footer>
         </main>
       </div>
+
+      {/* Shopping Mode full-screen overlay (V2) */}
+      {shopping.open && currentHousehold && (
+        <ShoppingMode
+          householdId={currentHousehold.id}
+          initialListId={shopping.listId}
+          onClose={() => setShopping({ open: false, listId: null })}
+        />
+      )}
 
       {/* Mobile bottom nav */}
       <nav

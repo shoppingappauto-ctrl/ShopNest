@@ -18,6 +18,7 @@ import {
 import { Plus, Search, Star } from 'lucide-react'
 import { useAddItem, useProducts, useStores } from '@/lib/shopnest/hooks'
 import { CATEGORY_EMOJI, ITEM_CATEGORIES, CATEGORY_LABEL, UNITS, SPECIALTY_CATALOG } from '@/lib/shopnest/constants'
+import { useCatalogSearch, type CatalogEntry } from '@/lib/shopnest/hooks'
 import type { HouseholdProduct } from '@/lib/shopnest/types'
 
 export function AddItemDialog({
@@ -94,7 +95,14 @@ export function AddItemDialog({
     })
   }
 
-  const addFromCatalog = (entry: (typeof SPECIALTY_CATALOG)[number]) => {
+  const addFromCatalog = (entry: {
+    name: string
+    nameBn?: string
+    category: string
+    defaultQty: number
+    unit: string
+    preferredStoreCategory?: string
+  }) => {
     // auto-save to household catalog so it becomes a one-tap favorite next time
     addItem.mutate(
       {
@@ -109,10 +117,25 @@ export function AddItemDialog({
     )
   }
 
-  const filteredProducts = products.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()))
-  const filteredCatalog = SPECIALTY_CATALOG.filter(
-    (e) => e.name.toLowerCase().includes(search.toLowerCase()) || (e.nameBn ?? '').includes(search)
-  )
+  // V2 Feature Five — alias-aware search: English, Bangla, transliteration and
+  // curated aliases all resolve to the same canonical product ("ilish" → Hilsa).
+  const q = search.trim().toLowerCase()
+  const houseMatch = (p: (typeof products)[number]) => {
+    let aliases: string[] = []
+    try {
+      aliases = p.aliases ? JSON.parse(p.aliases as unknown as string) : []
+    } catch { aliases = [] }
+    return p.name.toLowerCase().includes(q) || (p.nameBn ?? '').includes(q) || aliases.some((a) => a.toLowerCase().includes(q))
+  }
+  const catalogMatch = (e: CatalogEntry) =>
+    e.name.toLowerCase().includes(q) || (e.nameBn ?? '').includes(q) || (e.aliases ?? []).some((a) => a.toLowerCase().includes(q))
+  const filteredProducts = q ? products.filter(houseMatch) : products
+  const filteredCatalog: CatalogEntry[] = q ? SPECIALTY_CATALOG.filter(catalogMatch) : SPECIALTY_CATALOG
+  // server-side search catches transliteration variants beyond curated aliases
+  const catalogSearch = useCatalogSearch(q.length >= 2 ? q : '', householdId)
+  const extraCatalog = (catalogSearch.data?.catalog ?? []).filter(
+    (e) => !filteredCatalog.some((f) => f.name === e.name)
+  ).slice(0, 8)
 
   return (
     <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) reset() }}>
@@ -228,7 +251,22 @@ export function AddItemDialog({
                   <Plus className="h-4 w-4 text-muted-foreground" />
                 </button>
               ))}
-              {filteredProducts.length === 0 && filteredCatalog.length === 0 && (
+              {extraCatalog.map((entry) => (
+                <button
+                  key={`srv-${entry.name}`}
+                  type="button"
+                  className="w-full flex items-center gap-3 rounded-xl border bg-card p-3 text-left hover:border-primary/50 hover:bg-primary/5 transition-colors"
+                  onClick={() => addFromCatalog(entry)}
+                >
+                  <span className="text-xl" aria-hidden>{CATEGORY_EMOJI[entry.category] ?? '🛒'}</span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-medium truncate">{entry.name}</span>
+                    {entry.nameBn && <span className="block text-xs text-muted-foreground">{entry.nameBn}</span>}
+                  </span>
+                  <span className="text-xs text-muted-foreground shrink-0 tabular-nums">{entry.defaultQty} {entry.unit}</span>
+                </button>
+              ))}
+              {filteredProducts.length === 0 && filteredCatalog.length === 0 && extraCatalog.length === 0 && (
                 <p className="text-sm text-muted-foreground py-4 text-center">Nothing matches “{search}”.</p>
               )}
             </div>

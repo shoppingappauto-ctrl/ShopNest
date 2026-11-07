@@ -21,6 +21,8 @@ model User {
   isAdmin      Boolean   @default(false) // platform administrator (admin portal)
   isSuspended  Boolean   @default(false)
   emailVerified Boolean  @default(false) // email delivery is disabled in this sandbox build
+  notifyPrefs  String? // JSON: {"purchases":true,"comments":true,"reminders":true} (in-app notification preferences)
+  largeText    Boolean   @default(false) // accessibility: large-text mode (caregiver/elderly friendly)
   lastActiveAt DateTime  @default(now())
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
@@ -31,6 +33,10 @@ model User {
   activities   Activity[]
   addedItems   ShoppingItem[] @relation("ItemAdder")
   purchasedItems ShoppingItem[] @relation("ItemPurchaser")
+  confirmationsRequested ItemConfirmationRequest[] @relation("ConfirmationRequester")
+  confirmationsDecided   ItemConfirmationRequest[] @relation("ConfirmationDecider")
+  priceObservations PriceObservation[] @relation("PriceObserver")
+  eventAssignments  EventItem[] @relation("EventAssignee")
 }
 
 model Session {
@@ -60,13 +66,17 @@ model Household {
   events    HouseholdEvent[]
   activities Activity[]
   items     ShoppingItem[]
+  sessions  ShoppingSession[]
+  budgets   ShoppingBudget[]
+  priceObservations PriceObservation[]
+  pantryItems PantryItem[]
 }
 
 model HouseholdMember {
   id          String   @id @default(cuid())
   householdId String
   userId      String
-  role        String   @default("MEMBER") // OWNER | ADMIN | MEMBER
+  role        String   @default("MEMBER") // OWNER | ADMIN | MEMBER | CAREGIVER (delegated shopping access)
   joinedAt    DateTime @default(now())
 
   household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
@@ -96,6 +106,8 @@ model Store {
   items     ShoppingItem[]
   products  HouseholdProduct[]
   eventItems EventItem[]
+  sessions  ShoppingSession[]
+  priceObservations PriceObservation[]
 
   @@index([householdId])
 }
@@ -116,6 +128,8 @@ model ShoppingList {
   household Household      @relation(fields: [householdId], references: [id], onDelete: Cascade)
   store     Store?         @relation(fields: [storeId], references: [id], onDelete: SetNull)
   items     ShoppingItem[]
+  budgets   ShoppingBudget[]
+  sessions  ShoppingSession[]
 
   @@index([householdId])
 }
@@ -132,9 +146,12 @@ model ShoppingItem {
   category       String    @default("OTHER")
   status         String    @default("PENDING") // PENDING | PURCHASED | UNAVAILABLE | SUBSTITUTED
   substitutedWith String?
-  storeId        String? // per-item store override
+  storeId        String? // per-item store override (canonical store attribution — never inherited from the list)
   favoriteProductId String? // link to household product when re-added from favorites/catalog
   isRecurring    Boolean   @default(false)
+  estimatedPriceCents Int? // optional shopper estimate (integer minor units, decimal-safe)
+  actualPriceCents  Int? // confirmed at purchase (integer minor units)
+  priceCurrency   String    @default("USD")
   addedById      String
   purchasedAt    DateTime?
   purchasedById  String?
@@ -149,6 +166,8 @@ model ShoppingItem {
   purchasedBy User?        @relation("ItemPurchaser", fields: [purchasedById], references: [id], onDelete: SetNull)
   photos      ItemPhoto[]
   comments    ItemComment[]
+  confirmationRequests ItemConfirmationRequest[]
+  eventLinks  EventItem[]  @relation("EventShoppingLink")
 
   @@index([listId])
   @@index([householdId])
@@ -162,8 +181,34 @@ model ItemPhoto {
   createdAt    DateTime @default(now())
 
   item ShoppingItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  confirmationRequests ItemConfirmationRequest[]
 
   @@index([itemId])
+}
+
+// ─── Shopping Mode sessions (Finish Shopping history) ───────────────────────
+
+model ShoppingSession {
+  id           String    @id @default(cuid())
+  householdId  String
+  listId       String?
+  storeId      String? // store filter for the session; null = all stores
+  status       String    @default("ACTIVE") // ACTIVE | FINISHED
+  startedById  String
+  startedAt    DateTime  @default(now())
+  finishedAt   DateTime?
+  purchasedCount   Int   @default(0)
+  unavailableCount Int   @default(0)
+  remainingCount   Int   @default(0)
+  spentCents   Int       @default(0) // sum of actual (or estimate fallback) prices of items purchased in the session
+  currency     String    @default("USD")
+  snapshotJson String?   // JSON summary at finish: items purchased/unavailable/remaining
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  store     Store?    @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  list      ShoppingList? @relation(fields: [listId], references: [id], onDelete: SetNull)
+
+  @@index([householdId, startedAt])
 }
 
 model ItemComment {
@@ -180,6 +225,31 @@ model ItemComment {
   @@index([itemId])
 }
 
+model ItemConfirmationRequest {
+  id             String    @id @default(cuid())
+  itemId         String
+  householdId    String
+  requestedById  String
+  photoId        String?   // attached ItemPhoto (private, household-scoped)
+  note           String?
+  status         String    @default("PENDING") // PENDING | APPROVED | REJECTED | SUBSTITUTE_SUGGESTED | CANCELLED
+  decidedById    String?
+  decidedAt      DateTime?
+  decisionNote   String?
+  substituteName String?   // set when status = SUBSTITUTE_SUGGESTED
+  version        Int       @default(1) // optimistic concurrency: decisions carry the version they saw
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  item        ShoppingItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  photo       ItemPhoto?   @relation(fields: [photoId], references: [id], onDelete: SetNull)
+  requestedBy User         @relation("ConfirmationRequester", fields: [requestedById], references: [id], onDelete: Cascade)
+  decidedBy   User?        @relation("ConfirmationDecider", fields: [decidedById], references: [id], onDelete: SetNull)
+
+  @@index([itemId])
+  @@index([householdId, status])
+}
+
 // ─── Household product catalog (favorites / recurring essentials) ───────────
 
 model HouseholdProduct {
@@ -191,6 +261,7 @@ model HouseholdProduct {
   defaultQty      Float     @default(1)
   unit            String    @default("pc")
   storeId         String?
+  aliases         String?   // JSON string[] — household-level product aliases (e.g. "ilish", "hilsa", "ish")
   isFavorite      Boolean   @default(true)
   isRecurring     Boolean   @default(false)
   recurrenceDays  Int? // e.g. every 7 days
@@ -202,6 +273,8 @@ model HouseholdProduct {
   household Household     @relation(fields: [householdId], references: [id], onDelete: Cascade)
   store     Store?        @relation(fields: [storeId], references: [id], onDelete: SetNull)
   items     ShoppingItem[]
+  priceObservations PriceObservation[]
+  pantryItems PantryItem[] @relation("PantryProduct")
 
   @@index([householdId])
 }
@@ -218,11 +291,13 @@ model HouseholdEvent {
   budget      Float?
   notes       String?
   status      String    @default("PLANNING") // PLANNING | COMPLETED
+  isTemplate  Boolean   @default(false) // reusable event template
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
   household Household  @relation(fields: [householdId], references: [id], onDelete: Cascade)
   items     EventItem[]
+  budgets   ShoppingBudget[]
 
   @@index([householdId])
 }
@@ -236,11 +311,15 @@ model EventItem {
   category    String   @default("OTHER")
   storeId     String?
   isDone      Boolean  @default(false)
+  assignedToId String? // household member responsible for this task
+  shoppingItemId String? // explicit link when copied to a shopping list (prevents duplicate creation)
   createdById String
   createdAt   DateTime @default(now())
 
   event HouseholdEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
   store Store?         @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  assignedTo User?     @relation("EventAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  shoppingItem ShoppingItem? @relation("EventShoppingLink", fields: [shoppingItemId], references: [id], onDelete: SetNull)
 
   @@index([eventId])
 }
@@ -251,7 +330,7 @@ model Activity {
   id          String   @id @default(cuid())
   householdId String
   userId      String?
-  type        String // ITEM_ADDED | ITEM_PURCHASED | ITEM_STATUS | COMMENT | PHOTO | LIST_CREATED | MEMBER_JOINED | EVENT | ...
+  type        String // ITEM_ADDED | ITEM_PURCHASED | ITEM_STATUS | COMMENT | PHOTO | LIST_CREATED | MEMBER_JOINED | EVENT | CONFIRMATION | BUDGET | PANTRY | PRICE | ...
   message     String
   createdAt   DateTime @default(now())
 
@@ -259,4 +338,80 @@ model Activity {
   user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([householdId, createdAt])
+}
+
+// ─── V2: budgets ─────────────────────────────────────────────────────────────
+
+model ShoppingBudget {
+  id          String    @id @default(cuid())
+  householdId String
+  scope       String    @default("TRIP") // TRIP (per list) | WEEKLY | MONTHLY | EVENT
+  listId      String?   // for TRIP scope
+  eventId     String?   // for EVENT scope
+  amountCents Int       // budget amount, integer minor units (decimal-safe)
+  currency    String    @default("USD")
+  periodStart DateTime? // anchor date for WEEKLY/MONTHLY budgets
+  createdById String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  household Household      @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  list      ShoppingList?  @relation(fields: [listId], references: [id], onDelete: Cascade)
+  event     HouseholdEvent? @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([householdId, scope])
+}
+
+// ─── V2: price memory (household-scoped, user-entered price history) ────────
+
+model PriceObservation {
+  id             String   @id @default(cuid())
+  householdId    String
+  productId      String?  // optional HouseholdProduct link
+  itemName       String
+  nameBn         String?
+  storeId        String?
+  storeName      String?  // denormalized snapshot so history survives store deletion
+  quantity       Float    @default(1)
+  unit           String   @default("pc")
+  packageSize    String?  // e.g. "1 gallon", "5 kg bag"
+  totalPriceCents Int     // what was paid/seen, integer minor units
+  currency       String   @default("USD")
+  unitPriceCents Int?     // normalized minor units per unitPriceBasis (computed at write time)
+  unitPriceBasis String?  // canonical unit basis (e.g. "gal", "kg", "pc")
+  source         String   @default("USER_ENTERED") // USER_ENTERED | RECEIPT | RETAILER_AUTHORIZED | PARTNER_FEED | COMMUNITY
+  observedAt     DateTime @default(now())
+  observedById   String
+  notes          String?
+
+  household Household        @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  product   HouseholdProduct? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  store     Store?           @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  observedBy User            @relation("PriceObserver", fields: [observedById], references: [id], onDelete: Cascade)
+
+  @@index([householdId, itemName])
+  @@index([productId])
+}
+
+// ─── V2: simple household pantry ────────────────────────────────────────────
+
+model PantryItem {
+  id                 String   @id @default(cuid())
+  householdId        String
+  name               String
+  nameBn             String?
+  category           String   @default("OTHER")
+  quantity           Float?
+  unit               String?
+  status             String   @default("UNKNOWN") // IN_STOCK | RUNNING_LOW | OUT_OF_STOCK | UNKNOWN
+  householdProductId String?  // optional link to household catalog product
+  notes              String?
+  updatedById        String
+  createdAt          DateTime @default(now())
+  lastUpdatedAt      DateTime @updatedAt
+
+  household        Household         @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  householdProduct HouseholdProduct? @relation("PantryProduct", fields: [householdProductId], references: [id], onDelete: SetNull)
+
+  @@index([householdId])
 }

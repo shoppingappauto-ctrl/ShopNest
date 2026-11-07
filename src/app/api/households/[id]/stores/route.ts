@@ -16,7 +16,15 @@ export async function GET(_req: Request, { params }: Params) {
     const stores = await db.store.findMany({
       where: { householdId: id },
       include: {
-        _count: { select: { items: { where: { status: 'PENDING' } }, lists: true } },
+        // canonical outstanding count: only items explicitly assigned to this
+        // store, pending, and not in archived lists — matches the outstanding
+        // API and Shopping Mode exactly
+        _count: {
+          select: {
+            items: { where: { status: 'PENDING', list: { status: { not: 'ARCHIVED' } } } },
+            lists: true,
+          },
+        },
       },
       orderBy: [{ isFavorite: 'desc' }, { name: 'asc' }],
     })
@@ -42,9 +50,9 @@ export async function POST(req: Request, { params }: Params) {
 
     const data = await parseBody(req, createSchema)
 
-    const duplicate = await db.store.findFirst({
-      where: { householdId: id, name: { equals: data.name } },
-    })
+    // case-insensitive duplicate check (SQLite has no insensitive mode)
+    const existingStores = await db.store.findMany({ where: { householdId: id }, select: { id: true, name: true } })
+    const duplicate = existingStores.find((s) => s.name.trim().toLowerCase() === data.name.trim().toLowerCase())
     if (duplicate) throw new ApiError(409, 'A store with this name already exists.')
 
     const store = await db.store.create({
@@ -53,6 +61,7 @@ export async function POST(req: Request, { params }: Params) {
 
     logActivity(id, user.id, 'STORE', `${user.name} added store “${store.name}”.`)
     broadcastHousehold(id, 'stores:changed')
+    broadcastHousehold(id, 'activity:changed')
 
     return Response.json({ store }, { status: 201 })
   } catch (error) {

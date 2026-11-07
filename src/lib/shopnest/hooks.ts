@@ -17,6 +17,7 @@ import type {
   Store,
   HistoryItem,
 } from '@/lib/shopnest/types'
+import type { ShoppingSessionT } from '@/lib/shopnest/types'
 
 export const qk = {
   me: ['me'] as const,
@@ -28,6 +29,7 @@ export const qk = {
   history: (id: string) => ['history', id] as const,
   activity: (id: string) => ['activity', id] as const,
   events: (id: string) => ['events', id] as const,
+  outstanding: (id: string) => ['outstanding', id] as const,
   adminStats: ['admin-stats'] as const,
   adminUsers: (q: string) => ['admin-users', q] as const,
 }
@@ -39,7 +41,7 @@ export const qk = {
 function useSyncedMutation<TVars, TData>(
   fn: (vars: TVars) => Promise<TData>,
   opts: {
-    invalidate?: string[][]
+    invalidate?: readonly (readonly string[])[]
     success?: string
   } = {}
 ) {
@@ -152,7 +154,7 @@ export function useRegenerateInvite(id: string) {
 
 export function useUpdateMemberRole(id: string) {
   return useSyncedMutation(
-    (vars: { memberId: string; role: 'ADMIN' | 'MEMBER' }) =>
+    (vars: { memberId: string; role: 'ADMIN' | 'MEMBER' | 'CAREGIVER' }) =>
       api(`/api/households/${id}/members/${vars.memberId}`, { method: 'PATCH', body: { role: vars.role } }),
     {
       invalidate: [['household', id]],
@@ -529,4 +531,313 @@ export function useAdminPatchUser() {
       api(`/api/admin/users/${vars.id}`, { method: 'PATCH', body: vars.patch }),
     { invalidate: [['admin-users'], ['admin-stats']], success: 'User updated' }
   )
+}
+
+// ═══ V2: shopping sessions (Shopping Mode) ═══════════════════════════════════
+
+export function useStartShoppingSession(householdId: string) {
+  return useSyncedMutation(
+    (vars: { listId?: string | null; storeId?: string | null }) =>
+      api<{ session: { id: string } }>(`/api/households/${householdId}/shopping-sessions`, {
+        method: 'POST',
+        body: vars,
+        noOfflineQueue: true,
+      }),
+    { invalidate: [qk.outstanding(householdId)] }
+  )
+}
+
+export function useFinishShoppingSession(householdId: string) {
+  return useSyncedMutation(
+    (sessionId: string) =>
+      api<{ session: ShoppingSessionT; summary: unknown }>(`/api/shopping-sessions/${sessionId}`, {
+        method: 'PATCH',
+        noOfflineQueue: true,
+      }),
+    { invalidate: [['sessions', householdId], ['history'], qk.lists(householdId), qk.me] }
+  )
+}
+
+export function useShoppingSessions(householdId: string | undefined) {
+  return useQuery({
+    queryKey: ['sessions', householdId ?? 'none'],
+    queryFn: () => api<{ sessions: ShoppingSessionT[] }>(`/api/households/${householdId}/shopping-sessions`),
+    enabled: !!householdId,
+  })
+}
+
+// ═══ V2: photo confirmations (Ask Family) ═══════════════════════════════════
+
+export type ConfirmationRequestT = {
+  id: string
+  itemId: string
+  householdId: string
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUBSTITUTE_SUGGESTED' | 'CANCELLED'
+  note: string | null
+  decisionNote: string | null
+  substituteName: string | null
+  version: number
+  createdAt: string
+  decidedAt: string | null
+  photo: { id: string; dataUrl: string } | null
+  requestedBy: { id: string; name: string; avatarColor: string } | null
+  decidedBy: { id: string; name: string; avatarColor: string } | null
+  item?: { id: string; name: string; listId?: string }
+}
+
+export function useConfirmations(householdId: string | undefined, status?: string) {
+  return useQuery({
+    queryKey: ['confirmations', householdId ?? 'none', status ?? 'all'],
+    queryFn: () =>
+      api<{ requests: ConfirmationRequestT[] }>(
+        `/api/households/${householdId}/confirmations${status ? `?status=${status}` : ''}`
+      ),
+    enabled: !!householdId,
+  })
+}
+
+export function useItemConfirmations(itemId: string | undefined) {
+  return useQuery({
+    queryKey: ['confirmations', 'item', itemId ?? 'none'],
+    queryFn: () => api<{ requests: ConfirmationRequestT[] }>(`/api/items/${itemId}/confirmations`),
+    enabled: !!itemId,
+  })
+}
+
+export function useAskFamily(itemId: string) {
+  return useSyncedMutation(
+    (vars: { note?: string | null; photoDataUrl?: string | null }) =>
+      api<{ request: ConfirmationRequestT }>(`/api/items/${itemId}/confirmations`, {
+        method: 'POST',
+        body: vars,
+        noOfflineQueue: true,
+      }),
+    { invalidate: [['confirmations'], ['lists'], ['list']] }
+  )
+}
+
+export function useDecideConfirmation(householdId: string) {
+  return useSyncedMutation(
+    (vars: { id: string; action: 'decide' | 'cancel'; decision?: 'APPROVED' | 'REJECTED' | 'SUBSTITUTE_SUGGESTED'; note?: string | null; substituteName?: string | null; version: number }) =>
+      api<{ request: ConfirmationRequestT }>(`/api/confirmations/${vars.id}`, {
+        method: 'PATCH',
+        body: vars,
+        noOfflineQueue: true,
+      }),
+    { invalidate: [['confirmations'], ['lists'], ['list'], qk.activity(householdId)] }
+  )
+}
+
+// ═══ V2: budgets ═════════════════════════════════════════════════════════════
+
+export type BudgetT = {
+  id: string
+  scope: 'TRIP' | 'WEEKLY' | 'MONTHLY' | 'EVENT'
+  listId: string | null
+  eventId: string | null
+  amountCents: number
+  currency: string
+  periodStart: string | null
+  spendCents: number
+  list?: { id: string; name: string; emoji: string } | null
+  event?: { id: string; name: string } | null
+}
+
+export function useBudgets(householdId: string | undefined) {
+  return useQuery({
+    queryKey: ['budgets', householdId ?? 'none'],
+    queryFn: () => api<{ budgets: BudgetT[] }>(`/api/households/${householdId}/budgets`),
+    enabled: !!householdId,
+  })
+}
+
+export function useSetBudget(householdId: string) {
+  return useSyncedMutation(
+    (vars: { scope: 'TRIP' | 'WEEKLY' | 'MONTHLY' | 'EVENT'; listId?: string | null; eventId?: string | null; amountCents: number; periodStart?: string | null }) =>
+      api<{ budget: BudgetT }>(`/api/households/${householdId}/budgets`, { method: 'POST', body: vars }),
+    { invalidate: [['budgets']], success: 'Budget saved' }
+  )
+}
+
+export function useDeleteBudget(householdId: string) {
+  return useSyncedMutation(
+    (budgetId: string) => api(`/api/households/${householdId}/budgets/${budgetId}`, { method: 'DELETE' }),
+    { invalidate: [['budgets']] }
+  )
+}
+
+// ═══ V2: price memory ════════════════════════════════════════════════════════
+
+export type PriceObservationT = {
+  id: string
+  itemName: string
+  nameBn: string | null
+  productId: string | null
+  storeId: string | null
+  storeName: string | null
+  quantity: number
+  unit: string
+  packageSize: string | null
+  totalPriceCents: number
+  currency: string
+  unitPriceCents: number | null
+  unitPriceBasis: string | null
+  source: string
+  observedAt: string
+  notes: string | null
+  store?: { id: string; name: string } | null
+  observedBy?: { id: string; name: string; avatarColor: string } | null
+}
+
+export function usePriceObservations(householdId: string | undefined, itemName?: string, productId?: string) {
+  return useQuery({
+    queryKey: ['prices', householdId ?? 'none', itemName ?? 'all', productId ?? 'all'],
+    queryFn: () => {
+      const params = new URLSearchParams()
+      if (itemName) params.set('itemName', itemName)
+      if (productId) params.set('productId', productId)
+      return api<{ observations: PriceObservationT[]; byProduct: unknown[] }>(
+        `/api/households/${householdId}/price-observations${params.size ? `?${params}` : ''}`
+      )
+    },
+    enabled: !!householdId,
+  })
+}
+
+export function useAddPriceObservation(householdId: string) {
+  return useSyncedMutation(
+    (vars: { itemName: string; nameBn?: string | null; productId?: string | null; storeId?: string | null; quantity: number; unit: string; packageSize?: string | null; totalPriceCents: number; source?: string; notes?: string | null }) =>
+      api<{ observation: PriceObservationT }>(`/api/households/${householdId}/price-observations`, {
+        method: 'POST',
+        body: vars,
+      }),
+    { invalidate: [['prices']], success: 'Price saved to Price Memory' }
+  )
+}
+
+export function useDeletePriceObservation(householdId: string) {
+  return useSyncedMutation(
+    (obsId: string) => api(`/api/households/${householdId}/price-observations/${obsId}`, { method: 'DELETE' }),
+    { invalidate: [['prices']] }
+  )
+}
+
+export function usePriceCompare(householdId: string | undefined, listId: string | undefined) {
+  return useQuery({
+    queryKey: ['price-compare', householdId ?? 'none', listId ?? 'none'],
+    queryFn: () =>
+      api<{ stores: { storeId: string; storeName: string; estimatedTotalCents: number; matched: number; missingCount: number; missing: string[]; staleUsed: string[] }[]; note: string }>(
+        `/api/households/${householdId}/price-compare?listId=${listId}`
+      ),
+    enabled: !!householdId && !!listId,
+  })
+}
+
+// ═══ V2: pantry ══════════════════════════════════════════════════════════════
+
+export type PantryItemT = {
+  id: string
+  name: string
+  nameBn: string | null
+  category: string
+  quantity: number | null
+  unit: string | null
+  status: 'IN_STOCK' | 'RUNNING_LOW' | 'OUT_OF_STOCK' | 'UNKNOWN'
+  householdProductId: string | null
+  notes: string | null
+  lastUpdatedAt: string
+  householdProduct?: { id: string; name: string } | null
+}
+
+export function usePantry(householdId: string | undefined) {
+  return useQuery({
+    queryKey: ['pantry', householdId ?? 'none'],
+    queryFn: () => api<{ items: PantryItemT[] }>(`/api/households/${householdId}/pantry`),
+    enabled: !!householdId,
+  })
+}
+
+export function useAddPantryItem(householdId: string) {
+  return useSyncedMutation(
+    (vars: { name: string; nameBn?: string | null; category?: string; quantity?: number | null; unit?: string | null; status?: string; householdProductId?: string | null; notes?: string | null }) =>
+      api<{ item: PantryItemT }>(`/api/households/${householdId}/pantry`, { method: 'POST', body: vars }),
+    { invalidate: [['pantry'], qk.activity(householdId)], success: 'Added to pantry' }
+  )
+}
+
+export function useUpdatePantryItem(householdId: string) {
+  return useSyncedMutation(
+    (vars: { id: string; quantity?: number | null; unit?: string | null; status?: string; notes?: string | null }) =>
+      api<{ item: PantryItemT }>(`/api/households/${householdId}/pantry/${vars.id}`, {
+        method: 'PATCH',
+        body: vars,
+      }),
+    { invalidate: [['pantry']] }
+  )
+}
+
+export function useDeletePantryItem(householdId: string) {
+  return useSyncedMutation(
+    (id: string) => api(`/api/households/${householdId}/pantry/${id}`, { method: 'DELETE' }),
+    { invalidate: [['pantry']] }
+  )
+}
+
+// ═══ V2: catalog search ══════════════════════════════════════════════════════
+
+export type CatalogEntry = {
+  name: string
+  nameBn?: string
+  aliases?: string[]
+  category: string
+  defaultQty: number
+  unit: string
+  preferredStoreCategory?: string
+  dietary?: string[]
+}
+
+export function useCatalogSearch(q: string, householdId?: string) {
+  return useQuery({
+    queryKey: ['catalog', q, householdId ?? 'none'],
+    queryFn: () =>
+      api<{ catalog: CatalogEntry[]; household: { id: string; name: string; nameBn: string | null; category: string; defaultQty: number; unit: string; aliases: string[] }[] }>(
+        `/api/catalog?q=${encodeURIComponent(q)}${householdId ? `&householdId=${householdId}` : ''}`
+      ),
+    staleTime: 60_000,
+  })
+}
+
+// ═══ V2: events (templates, assignments, copy-to-list) ═══════════════════════
+
+export function useDuplicateEvent(householdId: string) {
+  return useSyncedMutation(
+    (vars: { eventId: string; name?: string; asTemplate?: boolean }) =>
+      api<{ event: { id: string } }>(`/api/events/${vars.eventId}/duplicate`, {
+        method: 'POST',
+        body: { name: vars.name, asTemplate: vars.asTemplate ?? false },
+      }),
+    { invalidate: [qk.events(householdId)], success: 'Event duplicated' }
+  )
+}
+
+export function useCopyEventToList(householdId: string) {
+  return useSyncedMutation(
+    (vars: { eventId: string; listId: string }) =>
+      api<{ copied: number; skipped: number }>(`/api/events/${vars.eventId}/copy-to-list`, {
+        method: 'POST',
+        body: { listId: vars.listId },
+      }),
+    { invalidate: [qk.lists(householdId), qk.events(householdId)] }
+  )
+}
+
+// ═══ V2: user preferences ════════════════════════════════════════════════════
+
+export function useUpdatePrefs() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (vars: { notifyPrefs?: { purchases?: boolean; comments?: boolean; reminders?: boolean }; largeText?: boolean; name?: string }) =>
+      api('/api/auth/prefs', { method: 'PATCH', body: vars, noOfflineQueue: true }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: qk.me }),
+  })
 }

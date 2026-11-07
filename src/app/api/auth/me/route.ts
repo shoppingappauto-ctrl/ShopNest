@@ -12,6 +12,11 @@ export async function GET() {
       orderBy: { joinedAt: 'asc' },
     })
 
+    const meRow = await db.user.findUnique({
+      where: { id: user.id },
+      select: { notifyPrefs: true, largeText: true },
+    })
+
     const households = memberships.map((m) => ({
       id: m.household.id,
       name: m.household.name,
@@ -21,7 +26,14 @@ export async function GET() {
       joinedAt: m.joinedAt,
     }))
 
-    return Response.json({ user, households })
+    return Response.json({
+      user: {
+        ...user,
+        notifyPrefs: meRow?.notifyPrefs ?? null,
+        largeText: meRow?.largeText ?? false,
+      },
+      households,
+    })
   } catch (error) {
     return jsonError(error)
   }

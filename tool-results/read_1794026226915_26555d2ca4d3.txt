@@ -1,0 +1,854 @@
+     1→'use client'
+     2→
+     3→import { useEffect, useState } from 'react'
+     4→import { useQueryClient } from '@tanstack/react-query'
+     5→import { Button } from '@/components/ui/button'
+     6→import { Input } from '@/components/ui/input'
+     7→import { Label } from '@/components/ui/label'
+     8→import { Textarea } from '@/components/ui/textarea'
+     9→import { Card, CardContent } from '@/components/ui/card'
+    10→import { Badge } from '@/components/ui/badge'
+    11→import { Skeleton } from '@/components/ui/skeleton'
+    12→import { Switch } from '@/components/ui/switch'
+    13→import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+    14→import {
+    15→  Dialog,
+    16→  DialogContent,
+    17→  DialogDescription,
+    18→  DialogFooter,
+    19→  DialogHeader,
+    20→  DialogTitle,
+    21→} from '@/components/ui/dialog'
+    22→import {
+    23→  DropdownMenu,
+    24→  DropdownMenuContent,
+    25→  DropdownMenuItem,
+    26→  DropdownMenuTrigger,
+    27→} from '@/components/ui/dropdown-menu'
+    28→import {
+    29→  Plus,
+    30→  Star,
+    31→  MapPin,
+    32→  Navigation,
+    33→  MoreHorizontal,
+    34→  Trash2,
+    35→  Pencil,
+    36→  Store as StoreIcon,
+    37→  Search,
+    38→  Info,
+    39→  ChevronDown,
+    40→  AlertTriangle,
+    41→  Receipt,
+    42→  Scale,
+    43→  ListChecks,
+    44→} from 'lucide-react'
+    45→import { cn } from '@/lib/utils'
+    46→import {
+    47→  useStores,
+    48→  useCreateStore,
+    49→  useUpdateStore,
+    50→  useDeleteStore,
+    51→  useOutstanding,
+    52→  useLists,
+    53→  usePriceObservations,
+    54→  usePriceCompare,
+    55→  type PriceObservationT,
+    56→} from '@/lib/shopnest/hooks'
+    57→import { STORE_CATEGORIES, STORE_CATEGORY_EMOJI, WELL_KNOWN_STORES } from '@/lib/shopnest/constants'
+    58→import { formatCents, isPriceStale } from '@/lib/shopnest/money'
+    59→import { timeAgo } from '@/components/shopnest/ui-bits'
+    60→import type { Me, Store as StoreT, OutstandingGroup as OutstandingGroupT } from '@/lib/shopnest/types'
+    61→
+    62→// ─── local view types ────────────────────────────────────────────────────────
+    63→
+    64→/** Which store's outstanding items the drill-down dialog shows. */
+    65→type DetailTarget = { storeId: string; storeName: string; category: string }
+    66→
+    67→/**
+    68→ * Shape of the price-observations API's `byProduct` summary (typed locally —
+    69→ * the hook declares it as `unknown[]`). Latest observation per store plus the
+    70→ * lowest ever-recorded total for that store.
+    71→ */
+    72→type ByProductStore = {
+    73→  storeId: string | null
+    74→  storeName: string
+    75→  latest: {
+    76→    totalPriceCents: number
+    77→    quantity: number
+    78→    unit: string
+    79→    unitPriceCents: number | null
+    80→    basis: string | null
+    81→    observedAt: string
+    82→    stale: boolean
+    83→    source: string
+    84→  }
+    85→  lowestTotalPriceCents: number
+    86→}
+    87→type ByProductGroup = {
+    88→  itemName: string
+    89→  nameBn: string | null
+    90→  productId: string | null
+    91→  stores: ByProductStore[]
+    92→}
+    93→
+    94→/** Normalized per-store row used by both Price Memory modes (search + summary). */
+    95→type PriceStoreRow = {
+    96→  storeKey: string
+    97→  storeName: string
+    98→  latestCents: number
+    99→  quantity: number
+   100→  unit: string
+   101→  unitPriceCents: number | null
+   102→  basis: string | null
+   103→  observedAt: string
+   104→  source: string
+   105→}
+   106→type PriceProduct = { key: string; itemName: string; nameBn: string | null; rows: PriceStoreRow[] }
+   107→
+   108→/** One ranked store row from the price-compare API. */
+   109→type CompareStoreRow = {
+   110→  storeId: string
+   111→  storeName: string
+   112→  estimatedTotalCents: number
+   113→  matched: number
+   114→  missingCount: number
+   115→  missing: string[]
+   116→  staleUsed: string[]
+   117→}
+   118→
+   119→const SOURCE_LABELS: Record<string, string> = {
+   120→  USER_ENTERED: 'You entered',
+   121→  RETAILER_AUTHORIZED: 'Retailer-authorized',
+   122→  RECEIPT: 'Receipt',
+   123→  PARTNER_FEED: 'Partner feed',
+   124→  COMMUNITY: 'Community-reported',
+   125→}
+   126→
+   127→function sourceLabel(source: string): string {
+   128→  return SOURCE_LABELS[source] ?? 'Household-recorded'
+   129→}
+   130→
+   131→const CATEGORY_OPTIONS = STORE_CATEGORIES.map((c) => ({ value: c, label: `${STORE_CATEGORY_EMOJI[c]} ${labelFor(c)}` }))
+   132→
+   133→function labelFor(c: string): string {
+   134→  return c.charAt(0) + c.slice(1).toLowerCase().replace('_', ' ')
+   135→}
+   136→
+   137→/**
+   138→ * The outstanding API groups ONLY by the item's own store; items without a
+   139→ * store arrive as storeId "none" / category OTHER. Render that group as
+   140→ * "Unassigned" with the OTHER emoji, exactly per the canonical rule.
+   141→ */
+   142→function groupLabel(g: OutstandingGroupT): { emoji: string; name: string } {
+   143→  if (g.storeId === 'none') return { emoji: STORE_CATEGORY_EMOJI.OTHER ?? '🏬', name: 'Unassigned' }
+   144→  return { emoji: STORE_CATEGORY_EMOJI[g.category] ?? '🏬', name: g.storeName }
+   145→}
+   146→
+   147→export function StoresView({ householdId, me }: { householdId: string; me: Me }) {
+   148→  const storesQ = useStores(householdId)
+   149→  const createStore = useCreateStore(householdId)
+   150→  const updateStore = useUpdateStore(householdId)
+   151→  const deleteStore = useDeleteStore(householdId)
+   152→  const queryClient = useQueryClient()
+   153→
+   154→  // Single outstanding data source shared by the section AND the drill-down
+   155→  // dialog, so a store's count and its item list can never diverge.
+   156→  const outQ = useOutstanding(householdId)
+   157→  // The hook types groups narrowly; the API actually returns the richer V2
+   158→  // shape (note, nameBn, estimatedPriceCents — see types.ts / outstanding route).
+   159→  const outstandingGroups = (outQ.data?.groups ?? []) as OutstandingGroupT[]
+   160→
+   161→  const [createOpen, setCreateOpen] = useState(false)
+   162→  const [name, setName] = useState('')
+   163→  const [category, setCategory] = useState<string>('SUPERMARKET')
+   164→  const [address, setAddress] = useState('')
+   165→  const [notes, setNotes] = useState('')
+   166→  const [isFavorite, setIsFavorite] = useState(false)
+   167→  const [deleteConfirm, setDeleteConfirm] = useState<StoreT | null>(null)
+   168→  const [editStore, setEditStore] = useState<StoreT | null>(null)
+   169→  const [detail, setDetail] = useState<DetailTarget | null>(null)
+   170→
+   171→  const stores = storesQ.data?.stores ?? []
+   172→  const suggestions = WELL_KNOWN_STORES.filter(
+   173→    (s) => !stores.some((st) => st.name.toLowerCase() === s.toLowerCase())
+   174→  )
+   175→
+   176→  const openStoreDetail = (t: DetailTarget) => {
+   177→    setDetail(t)
+   178→    // refresh outstanding so the drill-down always matches the card count
+   179→    queryClient.invalidateQueries({ queryKey: ['outstanding', householdId] })
+   180→  }
+   181→
+   182→  const openNavigation = (s: StoreT) => {
+   183→    if (!s.address) {
+   184→      window.alert('No address saved for this store. Edit the store to add one.')
+   185→      return
+   186→    }
+   187→    window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s.address + ' ' + s.name)}`, '_blank')
+   188→  }
+   189→
+   190→  const submitCreate = () => {
+   191→    const n = name.trim()
+   192→    if (!n) return
+   193→    createStore.mutate(
+   194→      { name: n, category, address: address.trim() || null, notes: notes.trim() || null, isFavorite },
+   195→      {
+   196→        onSuccess: () => {
+   197→          setCreateOpen(false)
+   198→          setName('')
+   199→          setAddress('')
+   200→          setNotes('')
+   201→          setIsFavorite(false)
+   202→        },
+   203→      }
+   204→    )
+   205→  }
+   206→
+   207→  const submitEdit = () => {
+   208→    if (!editStore) return
+   209→    updateStore.mutate({
+   210→      id: editStore.id,
+   211→      patch: {
+   212→        name: editStore.name,
+   213→        category: editStore.category,
+   214→        address: editStore.address,
+   215→        notes: editStore.notes,
+   216→      },
+   217→    })
+   218→    setEditStore(null)
+   219→  }
+   220→
+   221→  const detailGroup = detail ? outstandingGroups.find((g) => g.storeId === detail.storeId) : undefined
+   222→  const detailEmoji = !detail
+   223→    ? '🏬'
+   224→    : detail.storeId === 'none'
+   225→      ? (STORE_CATEGORY_EMOJI.OTHER ?? '🏬')
+   226→      : (STORE_CATEGORY_EMOJI[detail.category] ?? '🏬')
+   227→
+   228→  return (
+   229→    <div className="px-4 py-4 sm:px-0 sm:py-0 space-y-4">
+   230→      <div className="flex items-center justify-between gap-2">
+   231→        <div>
+   232→          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Stores</h1>
+   233→          <p className="text-sm text-muted-foreground">Supermarkets, halal markets, Bangladeshi groceries, butchers and more.</p>
+   234→        </div>
+   235→        <Button onClick={() => setCreateOpen(true)} size="sm" className="gap-1.5 h-9 shrink-0">
+   236→          <Plus className="h-4 w-4" /> Add store
+   237→        </Button>
+   238→      </div>
+   239→
+   240→      {/* Outstanding by store — canonical counts, items grouped by their own store */}
+   241→      <OutstandingByStore
+   242→        groups={outstandingGroups}
+   243→        isLoading={outQ.isLoading}
+   244→        onOpenStore={openStoreDetail}
+   245→      />
+   246→
+   247→      {storesQ.isLoading ? (
+   248→        <div className="grid gap-3 sm:grid-cols-2">
+   249→          <Skeleton className="h-28" />
+   250→          <Skeleton className="h-28" />
+   251→        </div>
+   252→      ) : stores.length === 0 ? (
+   253→        <Card>
+   254→          <CardContent className="py-10 text-center space-y-3">
+   255→            <StoreIcon className="mx-auto h-8 w-8 text-muted-foreground" />
+   256→            <p className="text-sm text-muted-foreground">Add the stores your household shops at to organize lists by store.</p>
+   257→            <Button onClick={() => setCreateOpen(true)}>
+   258→              <Plus className="mr-1 h-4 w-4" /> Add your first store
+   259→            </Button>
+   260→          </CardContent>
+   261→        </Card>
+   262→      ) : (
+   263→        <div className="grid gap-3 sm:grid-cols-2">
+   264→          {stores.map((s) => {
+   265→            // CANONICAL count: stores API counts only PENDING items assigned to
+   266→            // this store (item.storeId == store) excluding archived lists — the
+   267→            // same rule as the outstanding groups above, so numbers always agree.
+   268→            const toBuy = s._count?.items ?? 0
+   269→            const listsCount = s._count?.lists ?? 0
+   270→            return (
+   271→              <Card key={s.id} className="py-0 overflow-hidden">
+   272→                <div className="flex items-stretch">
+   273→                  <button
+   274→                    type="button"
+   275→                    onClick={() => openStoreDetail({ storeId: s.id, storeName: s.name, category: s.category })}
+   276→                    className="min-w-0 flex-1 space-y-2 p-4 text-left transition-colors hover:bg-muted/50"
+   277→                    aria-label={`${s.name} — ${toBuy} to buy. View outstanding items.`}
+   278→                  >
+   279→                    <div className="flex items-start gap-3">
+   280→                      <span className="text-2xl shrink-0" aria-hidden>{STORE_CATEGORY_EMOJI[s.category] ?? '🏬'}</span>
+   281→                      <div className="min-w-0 flex-1">
+   282→                        <div className="flex items-center gap-2">
+   283→                          <h3 className="font-semibold truncate">{s.name}</h3>
+   284→                          <Badge variant="outline" className="text-[10px] shrink-0">{labelFor(s.category)}</Badge>
+   285→                          {!s.verified && <Badge variant="secondary" className="text-[10px] shrink-0">user-added</Badge>}
+   286→                        </div>
+   287→                        {s.address && (
+   288→                          <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+   289→                            <MapPin className="h-3 w-3 shrink-0" /> <span className="truncate">{s.address}</span>
+   290→                          </p>
+   291→                        )}
+   292→                        {s.notes && <p className="text-xs text-muted-foreground mt-0.5">{s.notes}</p>}
+   293→                      </div>
+   294→                    </div>
+   295→                    <p className="flex flex-wrap items-center gap-1.5 text-xs">
+   296→                      <Badge variant="outline" className="border-primary/40 bg-primary/10 text-primary text-[11px] tabular-nums">
+   297→                        {toBuy} to buy
+   298→                      </Badge>
+   299→                      <span className="text-muted-foreground">
+   300→                        {listsCount} list{listsCount === 1 ? '' : 's'}
+   301→                      </span>
+   302→                    </p>
+   303→                  </button>
+   304→                  <div className="flex items-start gap-1 p-2 shrink-0">
+   305→                    <button
+   306→                      onClick={() => updateStore.mutate({ id: s.id, patch: { isFavorite: !s.isFavorite } })}
+   307→                      aria-label={s.isFavorite ? 'Unfavorite store' : 'Favorite store'}
+   308→                      className="p-1.5"
+   309→                    >
+   310→                      <Star className={cn('h-[18px] w-[18px]', s.isFavorite ? 'fill-primary text-primary' : 'text-muted-foreground')} />
+   311→                    </button>
+   312→                    <DropdownMenu>
+   313→                      <DropdownMenuTrigger asChild>
+   314→                        <Button variant="ghost" size="icon" className="h-8 w-8" aria-label={`Actions for ${s.name}`}>
+   315→                          <MoreHorizontal className="h-4 w-4" />
+   316→                        </Button>
+   317→                      </DropdownMenuTrigger>
+   318→                      <DropdownMenuContent align="end">
+   319→                        <DropdownMenuItem onClick={() => openNavigation(s)}>
+   320→                          <Navigation className="mr-2 h-4 w-4" /> Open in maps
+   321→                        </DropdownMenuItem>
+   322→                        <DropdownMenuItem onClick={() => setEditStore({ ...s })}>
+   323→                          <Pencil className="mr-2 h-4 w-4" /> Edit
+   324→                        </DropdownMenuItem>
+   325→                        <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setDeleteConfirm(s)}>
+   326→                          <Trash2 className="mr-2 h-4 w-4" /> Remove
+   327→                        </DropdownMenuItem>
+   328→                      </DropdownMenuContent>
+   329→                    </DropdownMenu>
+   330→                  </div>
+   331→                </div>
+   332→              </Card>
+   333→            )
+   334→          })}
+   335→        </div>
+   336→      )}
+   337→
+   338→      {/* Price Memory — household-recorded prices, searchable */}
+   339→      <PriceMemorySection householdId={householdId} />
+   340→
+   341→      {/* Basket comparison — estimated basket per store for one active list */}
+   342→      <BasketCompareSection householdId={householdId} stores={stores} />
+   343→
+   344→      {/* Store detail drill-down: same outstanding groups the counts come from */}
+   345→      <Dialog open={!!detail} onOpenChange={(o) => !o && setDetail(null)}>
+   346→        <DialogContent className="sm:max-w-md">
+   347→          <DialogHeader>
+   348→            <DialogTitle className="flex items-center gap-2">
+   349→              <span aria-hidden>{detailEmoji}</span>
+   350→              {detail?.storeName}
+   351→            </DialogTitle>
+   352→            <DialogDescription>
+   353→              Items still to buy here — same source as the “to buy” count on the card.
+   354→            </DialogDescription>
+   355→          </DialogHeader>
+   356→          {detailGroup && detailGroup.items.length > 0 ? (
+   357→            <>
+   358→              <div className="max-h-[50dvh] space-y-1.5 overflow-y-auto scrollbar-slim -mx-1 px-1">
+   359→                {detailGroup.items.map((it) => (
+   360→                  <div key={it.id} className="rounded-lg border bg-card/50 px-3 py-2">
+   361→                    <div className="flex items-start justify-between gap-2">
+   362→                      <p className="text-sm font-medium leading-snug">
+   363→                        {it.name}
+   364→                        {it.nameBn && <span className="ml-1.5 text-xs font-normal text-muted-foreground">{it.nameBn}</span>}
+   365→                      </p>
+   366→                      {it.estimatedPriceCents != null && (
+   367→                        <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{formatCents(it.estimatedPriceCents)}</span>
+   368→                      )}
+   369→                    </div>
+   370→                    <p className="mt-0.5 text-xs text-muted-foreground">
+   371→                      {it.quantity} {it.unit} · {it.listName}
+   372→                    </p>
+   373→                    {it.note && <p className="mt-1 text-xs italic text-muted-foreground">“{it.note}”</p>}
+   374→                  </div>
+   375→                ))}
+   376→              </div>
+   377→              <p className="text-[11px] text-muted-foreground">
+   378→                {detailGroup.items.length} item{detailGroup.items.length === 1 ? '' : 's'} to buy here.
+   379→              </p>
+   380→            </>
+   381→          ) : (
+   382→            <div className="rounded-xl border border-dashed p-6 text-center">
+   383→              <ListChecks className="mx-auto h-6 w-6 text-muted-foreground" />
+   384→              <p className="mt-2 text-sm text-muted-foreground">Nothing to buy at this store right now.</p>
+   385→            </div>
+   386→          )}
+   387→        </DialogContent>
+   388→      </Dialog>
+   389→
+   390→      {/* Create dialog */}
+   391→      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+   392→        <DialogContent className="sm:max-w-md">
+   393→          <DialogHeader>
+   394→            <DialogTitle>Add a store</DialogTitle>
+   395→            <DialogDescription>Store details are user-entered and marked as such — never shown as verified listings.</DialogDescription>
+   396→          </DialogHeader>
+   397→          <div className="space-y-3">
+   398→            <div className="space-y-1.5">
+   399→              <Label htmlFor="st-name">Name</Label>
+   400→              <Input id="st-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Al Aqsa Halal Market" autoFocus />
+   401→            </div>
+   402→            {suggestions.length > 0 && (
+   403→              <div className="flex gap-1.5 flex-wrap">
+   404→                {suggestions.slice(0, 6).map((sg) => (
+   405→                  <button
+   406→                    key={sg}
+   407→                    className="rounded-full border px-2.5 py-1 text-xs hover:border-primary/60 hover:bg-primary/5"
+   408→                    onClick={() => setName(sg)}
+   409→                  >
+   410→                    {sg}
+   411→                  </button>
+   412→                ))}
+   413→              </div>
+   414→            )}
+   415→            <div className="space-y-1.5">
+   416→              <Label htmlFor="st-category">Category</Label>
+   417→              <select id="st-category" value={category} onChange={(e) => setCategory(e.target.value)} className="h-10 w-full rounded-md border bg-background px-3 text-sm">
+   418→                {CATEGORY_OPTIONS.map((c) => (
+   419→                  <option key={c.value} value={c.value}>{c.label}</option>
+   420→                ))}
+   421→              </select>
+   422→            </div>
+   423→            <div className="space-y-1.5">
+   424→              <Label htmlFor="st-address">Address (optional)</Label>
+   425→              <Input id="st-address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Street, city" />
+   426→            </div>
+   427→            <div className="space-y-1.5">
+   428→              <Label htmlFor="st-notes">Notes (optional)</Label>
+   429→              <Textarea id="st-notes" value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} placeholder="Best fish selection, open Sundays…" />
+   430→            </div>
+   431→            <div className="flex items-center justify-between">
+   432→              <Label htmlFor="st-fav" className="text-sm">Save as favorite</Label>
+   433→              <Switch id="st-fav" checked={isFavorite} onCheckedChange={setIsFavorite} />
+   434→            </div>
+   435→          </div>
+   436→          <DialogFooter>
+   437→            <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
+   438→            <Button onClick={submitCreate} disabled={!name.trim() || createStore.isPending}>Add store</Button>
+   439→          </DialogFooter>
+   440→        </DialogContent>
+   441→      </Dialog>
+   442→
+   443→      {/* Edit dialog */}
+   444→      <Dialog open={!!editStore} onOpenChange={(o) => !o && setEditStore(null)}>
+   445→        <DialogContent className="sm:max-w-md">
+   446→          <DialogHeader>
+   447→            <DialogTitle>Edit store</DialogTitle>
+   448→          </DialogHeader>
+   449→          {editStore && (
+   450→            <div className="space-y-3">
+   451→              <div className="space-y-1.5">
+   452→                <Label htmlFor="ste-name">Name</Label>
+   453→                <Input id="ste-name" value={editStore.name} onChange={(e) => setEditStore({ ...editStore, name: e.target.value })} />
+   454→              </div>
+   455→              <div className="space-y-1.5">
+   456→                <Label htmlFor="ste-category">Category</Label>
+   457→                <select
+   458→                  id="ste-category"
+   459→                  value={editStore.category}
+   460→                  onChange={(e) => setEditStore({ ...editStore, category: e.target.value })}
+   461→                  className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+   462→                >
+   463→                  {CATEGORY_OPTIONS.map((c) => (
+   464→                    <option key={c.value} value={c.value}>{c.label}</option>
+   465→                  ))}
+   466→                </select>
+   467→              </div>
+   468→              <div className="space-y-1.5">
+   469→                <Label htmlFor="ste-address">Address</Label>
+   470→                <Input id="ste-address" value={editStore.address ?? ''} onChange={(e) => setEditStore({ ...editStore, address: e.target.value })} />
+   471→              </div>
+   472→              <div className="space-y-1.5">
+   473→                <Label htmlFor="ste-notes">Notes</Label>
+   474→                <Textarea id="ste-notes" value={editStore.notes ?? ''} onChange={(e) => setEditStore({ ...editStore, notes: e.target.value })} rows={2} />
+   475→              </div>
+   476→            </div>
+   477→          )}
+   478→          <DialogFooter>
+   479→            <Button variant="outline" onClick={() => setEditStore(null)}>Cancel</Button>
+   480→            <Button onClick={submitEdit}>Save</Button>
+   481→          </DialogFooter>
+   482→        </DialogContent>
+   483→      </Dialog>
+   484→
+   485→      {/* Delete confirm */}
+   486→      <Dialog open={!!deleteConfirm} onOpenChange={(o) => !o && setDeleteConfirm(null)}>
+   487→        <DialogContent className="sm:max-w-sm">
+   488→          <DialogHeader>
+   489→            <DialogTitle>Remove “{deleteConfirm?.name}”?</DialogTitle>
+   490→            <DialogDescription>Items assigned to this store stay on their lists; they just lose the store tag.</DialogDescription>
+   491→          </DialogHeader>
+   492→          <DialogFooter>
+   493→            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>Cancel</Button>
+   494→            <Button
+   495→              variant="destructive"
+   496→              onClick={() => {
+   497→                if (deleteConfirm) deleteStore.mutate({ id: deleteConfirm.id })
+   498→                setDeleteConfirm(null)
+   499→              }}
+   500→            >
+   501→              Remove
+   502→            </Button>
+   503→          </DialogFooter>
+   504→        </DialogContent>
+   505→      </Dialog>
+   506→    </div>
+   507→  )
+   508→}
+   509→
+   510→/** “Outstanding by store” — one clickable row per store group incl. Unassigned. */
+   511→function OutstandingByStore({
+   512→  groups,
+   513→  isLoading,
+   514→  onOpenStore,
+   515→}: {
+   516→  groups: OutstandingGroupT[]
+   517→  isLoading: boolean
+   518→  onOpenStore: (t: DetailTarget) => void
+   519→}) {
+   520→  if (isLoading) return <Skeleton className="h-16" />
+   521→  if (groups.length === 0) return null
+   522→
+   523→  return (
+   524→    <section aria-label="Outstanding by store" className="space-y-2">
+   525→      <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Outstanding by store</h2>
+   526→      <div className="grid gap-2 sm:grid-cols-2">
+   527→        {groups.map((g) => {
+   528→          const label = groupLabel(g)
+   529→          return (
+   530→            <button
+   531→              key={g.storeId}
+   532→              type="button"
+   533→              onClick={() => onOpenStore({ storeId: g.storeId, storeName: label.name, category: g.category })}
+   534→              className="rounded-xl border bg-card p-3 text-left transition-colors hover:bg-muted/50"
+   535→              aria-label={`${label.name} — ${g.items.length} to buy. View items.`}
+   536→            >
+   537→              <p className="flex items-center gap-1.5 text-sm font-semibold">
+   538→                <span aria-hidden>{label.emoji}</span> {label.name}
+   539→                <Badge variant="secondary" className="ml-auto tabular-nums">{g.items.length}</Badge>
+   540→              </p>
+   541→              <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+   542→                {g.items.map((i) => `${i.name} (${i.quantity} ${i.unit})`).join(' · ')}
+   543→              </p>
+   544→            </button>
+   545→          )
+   546→        })}
+   547→      </div>
+   548→    </section>
+   549→  )
+   550→}
+   551→
+   552→// ─── Price Memory ────────────────────────────────────────────────────────────
+   553→
+   554→/**
+   555→ * Price Memory browser.
+   556→ * - Search box filters via usePriceObservations(itemName=search).
+   557→ * - Empty search shows the API's per-product `byProduct` summary.
+   558→ * Always honest: household-recorded prices, never a live price feed.
+   559→ */
+   560→function PriceMemorySection({ householdId }: { householdId: string }) {
+   561→  const [searchRaw, setSearchRaw] = useState('')
+   562→  const [search, setSearch] = useState('')
+   563→
+   564→  // debounce keystrokes before hitting the API
+   565→  useEffect(() => {
+   566→    const t = setTimeout(() => setSearch(searchRaw.trim()), 300)
+   567→    return () => clearTimeout(t)
+   568→  }, [searchRaw])
+   569→
+   570→  const obsQ = usePriceObservations(householdId, search || undefined)
+   571→  const products = buildProducts(search, obsQ.data)
+   572→
+   573→  return (
+   574→    <section aria-label="Price Memory" className="space-y-2">
+   575→      <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Price Memory</h2>
+   576→      <p className="text-[11px] text-muted-foreground -mt-1">Household-recorded prices — not a live price feed.</p>
+   577→      <div className="relative">
+   578→        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+   579→        <Input
+   580→          value={searchRaw}
+   581→          onChange={(e) => setSearchRaw(e.target.value)}
+   582→          placeholder="Search recorded prices — e.g. hilsa, mustard oil…"
+   583→          className="pl-9"
+   584→          aria-label="Search recorded prices"
+   585→        />
+   586→      </div>
+   587→      {obsQ.isLoading ? (
+   588→        <Skeleton className="h-24" />
+   589→      ) : products.length === 0 ? (
+   590→        <div className="rounded-xl border border-dashed p-6 text-center">
+   591→          <Receipt className="mx-auto h-6 w-6 text-muted-foreground" />
+   592→          <p className="mt-2 text-sm text-muted-foreground">
+   593→            {search ? `No recorded prices for “${search}” yet.` : 'No prices recorded yet.'}
+   594→          </p>
+   595→          <p className="mt-1 text-xs text-muted-foreground">Save prices while you shop to build your household’s price memory.</p>
+   596→        </div>
+   597→      ) : (
+   598→        <div className="max-h-96 space-y-2 overflow-y-auto scrollbar-slim -mx-1 px-1">
+   599→          {products.map((p) => (
+   600→            <PriceProductCard key={p.key} product={p} />
+   601→          ))}
+   602→        </div>
+   603→      )}
+   604→    </section>
+   605→  )
+   606→}
+   607→
+   608→/**
+   609→ * Build the per-product price cards for both modes:
+   610→ * - search: group the searched observations by store (API returns them
+   611→ *   newest-first, so the first row seen per store is that store's latest).
+   612→ * - summary (empty search): use the API's per-product `byProduct` groups.
+   613→ */
+   614→function buildProducts(
+   615→  search: string,
+   616→  data: { observations: PriceObservationT[]; byProduct: unknown[] } | undefined
+   617→): PriceProduct[] {
+   618→  if (search) {
+   619→    const p = observationsToProduct(search, data?.observations ?? [])
+   620→    return p ? [p] : []
+   621→  }
+   622→  const byProduct = (data?.byProduct ?? []) as ByProductGroup[]
+   623→  return byProduct.map((g) => ({
+   624→    key: g.itemName.toLowerCase(),
+   625→    itemName: g.itemName,
+   626→    nameBn: g.nameBn,
+   627→    rows: g.stores.map((s) => ({
+   628→      storeKey: s.storeId ?? 'none',
+   629→      storeName: s.storeName,
+   630→      latestCents: s.latest.totalPriceCents,
+   631→      quantity: s.latest.quantity,
+   632→      unit: s.latest.unit,
+   633→      unitPriceCents: s.latest.unitPriceCents,
+   634→      basis: s.latest.basis,
+   635→      observedAt: s.latest.observedAt,
+   636→      source: s.latest.source,
+   637→    })),
+   638→  }))
+   639→}
+   640→
+   641→/** Group searched observations by store into a single product card. */
+   642→function observationsToProduct(search: string, obs: PriceObservationT[]): PriceProduct | null {
+   643→  if (obs.length === 0) return null
+   644→  const rows = new Map<string, PriceStoreRow>()
+   645→  for (const o of obs) {
+   646→    const key = o.storeId ?? 'none'
+   647→    if (!rows.has(key)) {
+   648→      rows.set(key, {
+   649→        storeKey: key,
+   650→        storeName: o.store?.name ?? o.storeName ?? 'Unassigned store',
+   651→        latestCents: o.totalPriceCents,
+   652→        quantity: o.quantity,
+   653→        unit: o.unit,
+   654→        unitPriceCents: o.unitPriceCents,
+   655→        basis: o.unitPriceBasis,
+   656→        observedAt: o.observedAt,
+   657→        source: o.source,
+   658→      })
+   659→    }
+   660→  }
+   661→  return {
+   662→    key: search.toLowerCase(),
+   663→    itemName: obs[0]?.itemName ?? search,
+   664→    nameBn: obs[0]?.nameBn ?? null,
+   665→    rows: [...rows.values()],
+   666→  }
+   667→}
+   668→
+   669→/** One product: per-store latest price, unit price, source, stale + lowest chips. */
+   670→function PriceProductCard({ product }: { product: PriceProduct }) {
+   671→  // "Lowest recorded" compares the displayed latest prices across stores, so
+   672→  // the chip always agrees with the number shown.
+   673→  const minLatest = product.rows.length > 1 ? Math.min(...product.rows.map((r) => r.latestCents)) : null
+   674→
+   675→  return (
+   676→    <div className="rounded-xl border bg-card p-3 space-y-2">
+   677→      <div className="flex items-baseline justify-between gap-2">
+   678→        <p className="text-sm font-semibold leading-snug">
+   679→          {product.itemName}
+   680→          {product.nameBn && <span className="ml-1.5 text-xs font-normal text-muted-foreground">{product.nameBn}</span>}
+   681→        </p>
+   682→        <span className="shrink-0 text-[10px] uppercase tracking-wide text-muted-foreground">
+   683→          {product.rows.length} store{product.rows.length === 1 ? '' : 's'}
+   684→        </span>
+   685→      </div>
+   686→      <div className="space-y-1.5">
+   687→        {product.rows.map((r) => {
+   688→          const stale = isPriceStale(r.observedAt)
+   689→          const isLowest = minLatest !== null && r.latestCents === minLatest
+   690→          return (
+   691→            <div key={r.storeKey} className="space-y-1 rounded-lg border border-border/60 px-2.5 py-2">
+   692→              <div className="flex items-center justify-between gap-2">
+   693→                <p className="truncate text-xs font-medium">{r.storeName}</p>
+   694→                <p className="shrink-0 text-sm font-bold tabular-nums">{formatCents(r.latestCents)}</p>
+   695→              </div>
+   696→              <div className="flex flex-wrap items-center gap-1.5">
+   697→                {r.unitPriceCents != null && r.basis && (
+   698→                  <Badge variant="outline" className="text-[10px] tabular-nums">
+   699→                    {formatCents(r.unitPriceCents)}/{r.basis}
+   700→                  </Badge>
+   701→                )}
+   702→                <Badge variant="outline" className="text-[10px]">{sourceLabel(r.source)}</Badge>
+   703→                {isLowest && (
+   704→                  <Badge variant="outline" className="border-primary/40 bg-primary/10 text-primary text-[10px]">
+   705→                    Lowest recorded
+   706→                  </Badge>
+   707→                )}
+   708→                {stale && (
+   709→                  <Badge variant="outline" className="gap-1 border-amber-500/40 bg-amber-500/10 text-amber-600 text-[10px]">
+   710→                    <AlertTriangle className="h-3 w-3 shrink-0" aria-hidden />
+   711→                    Price from {timeAgo(r.observedAt)} — may be outdated
+   712→                  </Badge>
+   713→                )}
+   714→              </div>
+   715→            </div>
+   716→          )
+   717→        })}
+   718→      </div>
+   719→    </div>
+   720→  )
+   721→}
+   722→
+   723→// ─── Basket comparison ───────────────────────────────────────────────────────
+   724→
+   725→/**
+   726→ * Pick an active list → price-compare API ranks stores by estimated basket
+   727→ * total from Price Memory. Only honest: matched/missing counts are shown,
+   728→ * missing items are never fabricated, and the API's honesty note is prominent.
+   729→ */
+   730→function BasketCompareSection({ householdId, stores }: { householdId: string; stores: StoreT[] }) {
+   731→  const listsQ = useLists(householdId)
+   732→  const activeLists = (listsQ.data?.lists ?? []).filter((l) => l.status === 'ACTIVE')
+   733→  const [chosenListId, setChosenListId] = useState('')
+   734→  // no explicit choice yet → default to the first active list (no effect needed)
+   735→  const listId = chosenListId || activeLists[0]?.id || ''
+   736→
+   737→  const compareQ = usePriceCompare(householdId, listId || undefined)
+   738→  const rows = compareQ.data?.stores ?? []
+   739→  const note = compareQ.data?.note
+   740→
+   741→  return (
+   742→    <section aria-label="Basket comparison" className="space-y-2">
+   743→      <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Basket comparison</h2>
+   744→      <p className="text-[11px] text-muted-foreground -mt-1">
+   745→        Compare an active list’s estimated basket across your stores, using recorded prices.
+   746→      </p>
+   747→      {activeLists.length === 0 ? (
+   748→        <p className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
+   749→          No active lists to compare yet.
+   750→        </p>
+   751→      ) : (
+   752→        <div className="space-y-3">
+   753→          <select
+   754→            value={listId}
+   755→            onChange={(e) => setChosenListId(e.target.value)}
+   756→            aria-label="Choose a list to compare"
+   757→            className="h-9 w-full rounded-md border bg-background px-3 text-sm sm:max-w-xs"
+   758→          >
+   759→            <option value="" disabled>Choose a list…</option>
+   760→            {activeLists.map((l) => (
+   761→              <option key={l.id} value={l.id}>{l.emoji} {l.name}</option>
+   762→            ))}
+   763→          </select>
+   764→
+   765→          {note && (
+   766→            <div className="flex items-start gap-2 rounded-xl border border-primary/30 bg-primary/5 px-3 py-2.5">
+   767→              <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
+   768→              <p className="text-xs leading-relaxed text-foreground/90">{note}</p>
+   769→            </div>
+   770→          )}
+   771→
+   772→          {!listId || compareQ.isLoading ? (
+   773→            <Skeleton className="h-24" />
+   774→          ) : compareQ.isError ? (
+   775→            <p className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
+   776→              Couldn’t load the comparison for this list.
+   777→            </p>
+   778→          ) : rows.length === 0 ? (
+   779→            <div className="rounded-xl border border-dashed p-6 text-center">
+   780→              <Scale className="mx-auto h-6 w-6 text-muted-foreground" />
+   781→              <p className="mt-2 text-sm text-muted-foreground">Not enough price data yet — save prices while you shop.</p>
+   782→            </div>
+   783→          ) : (
+   784→            <div className="max-h-96 space-y-2 overflow-y-auto scrollbar-slim -mx-1 px-1">
+   785→              {rows.map((row, i) => (
+   786→                <BasketRow
+   787→                  key={row.storeId}
+   788→                  row={row}
+   789→                  rank={i}
+   790→                  isFavorite={stores.find((s) => s.id === row.storeId)?.isFavorite ?? false}
+   791→                />
+   792→              ))}
+   793→            </div>
+   794→          )}
+   795→        </div>
+   796→      )}
+   797→    </section>
+   798→  )
+   799→}
+   800→
+   801→/** One ranked store estimate with matched/missing counts and honest chips. */
+   802→function BasketRow({ row, rank, isFavorite }: { row: CompareStoreRow; rank: number; isFavorite: boolean }) {
+   803→  return (
+   804→    <div className={cn('rounded-xl border bg-card p-3', rank === 0 && 'border-primary/40')}>
+   805→      <div className="flex items-start justify-between gap-2">
+   806→        <p className="flex min-w-0 items-center gap-1 truncate text-sm font-semibold">
+   807→          {isFavorite && <Star className="h-3.5 w-3.5 shrink-0 fill-primary text-primary" aria-label="favorite store" />}
+   808→          <span className="truncate">{row.storeName}</span>
+   809→        </p>
+   810→        <div className="shrink-0 text-right">
+   811→          <p className="text-sm font-bold tabular-nums">{formatCents(row.estimatedTotalCents)}</p>
+   812→          <p className="text-[10px] text-muted-foreground">estimated total</p>
+   813→        </div>
+   814→      </div>
+   815→      <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+   816→        {rank === 0 && (
+   817→          <Badge variant="outline" className="border-primary/40 bg-primary/10 text-primary text-[10px]">
+   818→            Best estimate
+   819→          </Badge>
+   820→        )}
+   821→        <Badge variant="secondary" className="text-[10px] tabular-nums">{row.matched} priced</Badge>
+   822→        {row.missingCount > 0 && (
+   823→          <Badge variant="outline" className="text-[10px] tabular-nums">{row.missingCount} missing</Badge>
+   824→        )}
+   825→        {row.staleUsed.length > 0 && (
+   826→          <Badge
+   827→            variant="outline"
+   828→            className="gap-1 border-amber-500/40 bg-amber-500/10 text-amber-600 text-[10px]"
+   829→            title={`Stale prices used for: ${row.staleUsed.join(', ')}`}
+   830→          >
+   831→            <AlertTriangle className="h-3 w-3 shrink-0" aria-hidden />
+   832→            {row.staleUsed.length} stale price{row.staleUsed.length === 1 ? '' : 's'} used
+   833→          </Badge>
+   834→        )}
+   835→      </div>
+   836→      {row.missing.length > 0 && (
+   837→        <Collapsible className="mt-2">
+   838→          <CollapsibleTrigger className="group flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+   839→            <ChevronDown className="h-3.5 w-3.5 transition-transform group-data-[state=open]:rotate-180" aria-hidden />
+   840→            Missing items ({row.missingCount})
+   841→          </CollapsibleTrigger>
+   842→          <CollapsibleContent>
+   843→            <ul className="mt-1.5 space-y-1 border-l-2 border-border/60 pl-3">
+   844→              {row.missing.map((m, idx) => (
+   845→                <li key={idx} className="text-xs text-muted-foreground">{m}</li>
+   846→              ))}
+   847→            </ul>
+   848→          </CollapsibleContent>
+   849→        </Collapsible>
+   850→      )}
+   851→    </div>
+   852→  )
+   853→}
+   854→

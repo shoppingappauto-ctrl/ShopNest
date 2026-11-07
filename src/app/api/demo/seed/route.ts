@@ -1,18 +1,25 @@
 import { db } from '@/lib/db'
 import { hashPassword, jsonError, ApiError } from '@/lib/shopnest/auth'
+import { clientKey, rateLimit } from '@/lib/shopnest/rate-limit'
 
 /**
  * Demo data seeding (clearly labeled as demo in the UI).
  *
  * Creates a demo household with two members so the two-user realtime
  * collaboration flow can be tested immediately in the sandbox preview.
+ *
+ * Security: rate-limited per IP (prevents abuse of the fixed demo
+ * credentials); idempotent — repeated calls reuse the same household.
  */
 const DEMO_EMAIL_1 = 'alex@demo.shopnest'
 const DEMO_EMAIL_2 = 'sam@demo.shopnest'
 const DEMO_PASSWORD = 'shopnest123'
 
-export async function POST() {
+export async function POST(req: Request) {
   try {
+    if (!rateLimit(clientKey(req, 'demo-seed'), 5, 60_000)) {
+      throw new ApiError(429, 'Too many demo requests — please wait a minute.')
+    }
     let household = await db.household.findFirst({
       where: { name: 'The Demo Family' },
       include: { members: true },

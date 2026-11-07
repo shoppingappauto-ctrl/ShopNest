@@ -100,6 +100,39 @@ export function AdminView() {
         </Card>
       )}
 
+      {/* V2 feature metrics (real data only) */}
+      {stats?.v2 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">V2 feature usage</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              {[
+                { label: 'Shopping sessions started', value: stats.v2.shoppingSessionsStarted },
+                { label: 'Sessions completed', value: stats.v2.shoppingSessionsCompleted },
+                { label: 'Photo confirmations', value: stats.v2.confirmationRequests },
+                { label: 'Confirmations decided', value: stats.v2.confirmationsDecided },
+                { label: 'Pending confirmations', value: stats.v2.pendingConfirmations },
+                { label: 'Avg response (min)', value: stats.v2.avgConfirmationMinutes ?? '—' },
+                { label: 'Budgets set', value: stats.v2.budgets },
+                { label: 'Price observations', value: stats.v2.priceObservations },
+                { label: 'Pantry items', value: stats.v2.pantryItems },
+                { label: 'Events', value: stats.v2.events },
+                { label: 'Event templates', value: stats.v2.eventTemplates },
+                { label: 'Caregiver members', value: stats.v2.caregiverMembers },
+              ].map((c) => (
+                <div key={c.label} className="rounded-xl border bg-card p-3">
+                  <p className="text-lg font-bold tabular-nums">{c.value}</p>
+                  <p className="text-xs text-muted-foreground">{c.label}</p>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground mt-3">{stats.v2.note}</p>
+          </CardContent>
+        </Card>
+      )}
+
       {/* User management */}
       <Card>
         <CardHeader className="pb-2">

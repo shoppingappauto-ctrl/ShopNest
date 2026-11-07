@@ -60,6 +60,8 @@ export async function DELETE(_req: Request, { params }: Params) {
     if (access.role !== 'OWNER') {
       throw new ApiError(403, 'Only the household owner can delete the household.')
     }
+    // notify members before deletion so their clients drop stale state
+    broadcastHousehold(id, 'household:changed')
     await db.household.delete({ where: { id } })
     return Response.json({ ok: true })
   } catch (error) {

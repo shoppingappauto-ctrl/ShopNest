@@ -17,6 +17,8 @@ const patchSchema = z.object({
   status: z.enum(['PENDING', 'PURCHASED', 'UNAVAILABLE', 'SUBSTITUTED']).optional(),
   substitutedWith: z.string().trim().max(80).optional().nullable(),
   isRecurring: z.boolean().optional(),
+  estimatedPriceCents: z.number().int().min(0).max(100_000_000).optional().nullable(),
+  actualPriceCents: z.number().int().min(0).max(100_000_000).optional().nullable(),
 })
 
 export async function PATCH(req: Request, { params }: Params) {
@@ -42,6 +44,13 @@ export async function PATCH(req: Request, { params }: Params) {
     if (data.status === 'PURCHASED' && item.status !== 'PURCHASED') {
       patch.purchasedAt = now
       patch.purchasedById = user.id
+      // capture the confirmed price: explicit actual price wins, then the
+      // shopper's estimate, else leave unknown
+      if (data.actualPriceCents === undefined && data.estimatedPriceCents === undefined) {
+        // keep as-is
+      } else if (data.actualPriceCents === undefined) {
+        patch.actualPriceCents = item.estimatedPriceCents
+      }
     }
     if (data.status && data.status !== 'PURCHASED' && item.status === 'PURCHASED') {
       patch.purchasedAt = null
@@ -84,6 +93,8 @@ export async function PATCH(req: Request, { params }: Params) {
 
     broadcastHousehold(item.householdId, 'items:changed')
     if (data.status) broadcastHousehold(item.householdId, 'activity:changed')
+    // moving an item between stores changes every store count → notify stores views
+    if (data.storeId !== undefined) broadcastHousehold(item.householdId, 'stores:changed')
 
     return Response.json({ item: updated })
   } catch (error) {

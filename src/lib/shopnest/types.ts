@@ -1,9 +1,11 @@
 // ShopNest client-side types (mirror API responses)
 
-export type Role = 'OWNER' | 'ADMIN' | 'MEMBER'
+export type Role = 'OWNER' | 'ADMIN' | 'MEMBER' | 'CAREGIVER'
 export type ItemStatus = 'PENDING' | 'PURCHASED' | 'UNAVAILABLE' | 'SUBSTITUTED'
 
 export type Me = {
+  largeText?: boolean
+  notifyPrefs?: string | null
   id: string
   email: string
   name: string
@@ -115,6 +117,7 @@ export type HouseholdProduct = {
   defaultQty: number
   unit: string
   storeId: string | null
+  aliases?: string | null // JSON string[] of household-level aliases
   store?: { id: string; name: string; category: string } | null
   isFavorite: boolean
   isRecurring: boolean
@@ -163,6 +166,21 @@ export type AdminStats = {
   shopping: { lists: number; items: number; purchasedItems: number }
   billing: { paymentsEnabled: false; mrr: number; payingHouseholds: number; note: string }
   storage: { photos: number; bytes: number }
+  v2?: {
+    shoppingSessionsStarted: number
+    shoppingSessionsCompleted: number
+    confirmationRequests: number
+    confirmationsDecided: number
+    pendingConfirmations: number
+    avgConfirmationMinutes: number | null
+    budgets: number
+    priceObservations: number
+    pantryItems: number
+    events: number
+    eventTemplates: number
+    caregiverMembers: number
+    note: string
+  }
   meta: { generatedAt: string }
 }
 
@@ -175,4 +193,55 @@ export type AdminUser = {
   createdAt: string
   lastActiveAt: string
   _count: { memberships: number }
+}
+
+// ─── V2 types ────────────────────────────────────────────────────────────────
+
+export type ShoppingSessionT = {
+  id: string
+  householdId: string
+  listId: string | null
+  storeId: string | null
+  status: 'ACTIVE' | 'FINISHED'
+  startedAt: string
+  finishedAt: string | null
+  purchasedCount: number
+  unavailableCount: number
+  remainingCount: number
+  spentCents: number
+  currency: string
+  store?: { id: string; name: string } | null
+  list?: { id: string; name: string } | null
+}
+
+export type OutstandingGroup = {
+  storeId: string
+  storeName: string
+  category: string
+  items: {
+    id: string
+    name: string
+    nameBn: string | null
+    quantity: number
+    unit: string
+    note: string | null
+    category: string
+    listId: string
+    listName: string
+    estimatedPriceCents: number | null
+  }[]
+}
+
+export type EventItemT = {
+  id: string
+  name: string
+  quantity: number
+  unit: string
+  category: string
+  storeId: string | null
+  store?: { id: string; name: string } | null
+  isDone: boolean
+  assignedToId: string | null
+  assignedTo?: { id: string; name: string; avatarColor: string } | null
+  shoppingItemId: string | null
 }
