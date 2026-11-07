@@ -15,7 +15,7 @@ export function getSocket(): Socket | null {
 
 const EVENT_TO_KEYS: Record<string, string[]> = {
   'lists:changed': ['lists', 'list'],
-  'items:changed': ['lists', 'list', 'history'],
+  'items:changed': ['lists', 'list', 'history', 'outstanding'],
   'stores:changed': ['stores', 'lists', 'list'],
   'products:changed': ['products'],
   'events:changed': ['events'],
