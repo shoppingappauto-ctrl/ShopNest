@@ -36,41 +36,145 @@ export type QueuedMutation = {
 }
 
 const QUEUE_KEY = 'shopnest_pending_queue'
-const TOKEN_KEY = 'shopnest_session_token'
+const TOKEN_KEY = 'shopnest_session_token' // sessionStorage fallback only (tab-scoped)
+const LEGACY_TOKEN_KEY = 'shopnest_session_token' // previous build stored this in localStorage
 const listeners = new Set<() => void>()
 
 /**
- * Session token fallback (localStorage).
+ * Session-token strategy (V2 — Safari & storage-safe).
  *
- * The preview UI often renders the app inside a cross-origin iframe where
- * browsers block third-party cookies — the Set-Cookie from /api/auth/login
- * would silently vanish and every login would "bounce" back to the sign-in
- * screen. The auth APIs therefore also return the session token, which we
- * persist here and attach as `Authorization: Bearer <token>` to every
- * request. The server accepts either the header or the cookie.
+ *  • First-party / same-site web (the normal case in Safari, Chrome, Firefox,
+ *    mobile browsers): the session is an HttpOnly; Secure; SameSite=Lax cookie
+ *    that JavaScript can never read. We do NOT keep a token in any client
+ *    store — so XSS cannot exfiltrate a long-lived credential.
+ *
+ *  • Cross-origin iframe (the embedded preview panel): a Lax cookie is neither
+ *    set nor sent, so the API returns the opaque token in the login body and we
+ *    persist it to `sessionStorage` (tab-scoped — cleared when the tab closes,
+ *    never persistent) plus an in-memory copy. This is a deliberately degraded
+ *    fallback; it is the safest option available when cookies are blocked.
+ *
+ *  • Storage unavailable (private mode / disabled storage): we keep the token
+ *    in memory only. A reload ends the session and the user signs in again —
+ *    graceful, never silent.
+ *
+ *  • Native mobile: the token is stored in the OS Keychain/Keystore via
+ *    expo-secure-store (apps/mobile), not here.
+ *
+ * The previous build kept a 30-day token in localStorage for everyone; that is
+ * migrated away on first load (see migrateLegacyToken).
  */
-export function getSessionToken(): string | null {
-  if (typeof window === 'undefined') return null
+
+let memoryToken: string | null = null
+
+/** True when running inside a cross-origin (or opaque) iframe. */
+function inIframe(): boolean {
+  if (typeof window === 'undefined') return false
   try {
-    return window.localStorage.getItem(TOKEN_KEY)
+    return window.self !== window.top
   } catch {
-    return null
+    // cross-origin access throws — treat as iframe (cookies will be blocked)
+    return true
   }
 }
 
-export function setSessionToken(token: string) {
+function storageAvailable(type: 'sessionStorage' | 'localStorage'): boolean {
   try {
-    window.localStorage.setItem(TOKEN_KEY, token)
+    const s = window[type]
+    const k = '__sn_probe__'
+    s.setItem(k, '1')
+    s.removeItem(k)
+    return true
   } catch {
-    // storage unavailable — cookie path still works when not blocked
+    return false
+  }
+}
+
+/** Whether the sessionStorage Bearer fallback should be used (iframe + storage). */
+function shouldUseStoredToken(): boolean {
+  return inIframe() && storageAvailable('sessionStorage')
+}
+
+export function getSessionToken(): string | null {
+  if (typeof window === 'undefined') return null
+  if (memoryToken) return memoryToken
+  if (shouldUseStoredToken()) {
+    try {
+      memoryToken = window.sessionStorage.getItem(TOKEN_KEY)
+    } catch {
+      memoryToken = null
+    }
+  }
+  return memoryToken
+}
+
+export function setSessionToken(token: string) {
+  memoryToken = token
+  // Persist only inside the cross-origin iframe where the cookie cannot be
+  // used. Top-level same-site browsing relies on the HttpOnly cookie alone.
+  if (shouldUseStoredToken()) {
+    try {
+      window.sessionStorage.setItem(TOKEN_KEY, token)
+    } catch {
+      // quota exceeded — in-memory copy still works for this tab
+    }
   }
 }
 
 export function clearSessionToken() {
+  memoryToken = null
   try {
-    window.localStorage.removeItem(TOKEN_KEY)
+    window.sessionStorage.removeItem(TOKEN_KEY)
   } catch {
     // ignore
+  }
+  // also wipe any legacy localStorage token left by the previous build
+  try {
+    window.localStorage.removeItem(LEGACY_TOKEN_KEY)
+  } catch {
+    // ignore
+  }
+}
+
+/**
+ * One-time migration of the legacy localStorage token (previous build) into the
+ * new sessionStorage fallback (iframe only) or clears it (top-level, where the
+ * HttpOnly cookie is authoritative). Safe to call on every load.
+ */
+export function migrateLegacyToken() {
+  if (typeof window === 'undefined') return
+  let legacy: string | null = null
+  try {
+    legacy = window.localStorage.getItem(LEGACY_TOKEN_KEY)
+  } catch {
+    return
+  }
+  if (!legacy) return
+  if (shouldUseStoredToken() && !memoryToken) {
+    memoryToken = legacy
+    try {
+      window.sessionStorage.setItem(TOKEN_KEY, legacy)
+    } catch {
+      // keep in-memory
+    }
+  }
+  try {
+    window.localStorage.removeItem(LEGACY_TOKEN_KEY)
+  } catch {
+    // ignore
+  }
+}
+
+/**
+ * Sliding session refresh — extends the TTL when near expiry. Called once on
+ * app load. No-ops (resolves ok) when there is no session (unauthenticated).
+ */
+export async function refreshSession(): Promise<void> {
+  try {
+    await api('/api/auth/refresh', { method: 'POST', noOfflineQueue: true })
+  } catch {
+    // 401 (no/expired session) and network errors are both non-fatal here —
+    // the auth gate will simply show the sign-in screen.
   }
 }
 

@@ -1,0 +1,12 @@
+{
+  "name": "@shopnest/shared",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Framework-agnostic ShopNest types, constants, money math, voice parser and API request/response shapes — shared by the web app and the Expo mobile app.",
+  "main": "index.ts",
+  "types": "index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "license": "MIT"
+}

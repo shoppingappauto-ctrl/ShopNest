@@ -10,14 +10,17 @@ Scope: what the code actually enforces today, plus honestly-labeled gaps. Code r
 |---|---|
 | Credential check | bcrypt compare (cost 10) against `User.passwordHash` |
 | Session token | Opaque token (two concatenated UUIDs, 68 chars) stored as a `Session` row; 30-day TTL; expiry checked on every request |
-| Cookie | `sn_session`: `httpOnly`, `SameSite=None`, `Secure`, **`Partitioned`** (CHIPS), `path=/`, `maxAge` 30d |
-| Token fallback | Login responses also return the token; client stores it in `localStorage` and sends `Authorization: Bearer <token>`; server prefers the header, falls back to the cookie |
-| Why both | The app often renders in a cross-origin iframe where browsers block cookies; CHIPS fixes Chromium-family, but **Safari lacks CHIPS** — the Bearer fallback covers that case as long as localStorage is available |
+| Primary web session (same-site) | `sn_session` cookie: `httpOnly`, `SameSite=Lax`, `Secure`, `path=/`, `maxAge` 30d. **No token is exposed to JavaScript** — XSS cannot exfiltrate it. This is the path used by Safari, Chrome, Firefox and mobile-web top-level visits. |
+| Cross-origin iframe fallback | A `Lax` cookie is neither set nor sent inside a cross-origin iframe (e.g. the embedded preview panel), so login/register/refresh also return the opaque token in the JSON body. The web client persists it **only to `sessionStorage`** (tab-scoped — cleared on tab close, never persistent) plus an in-memory copy, and sends `Authorization: Bearer <token>`. The server prefers the header, falls back to the cookie. |
+| Storage-unavailable fallback | If `sessionStorage` is unavailable (private mode / disabled storage) the token is kept in memory only; a reload ends the session and the user signs in again. Graceful, never silent. |
+| Native mobile clients | The same opaque token is stored in the OS Keychain/Keystore via `expo-secure-store` (apps/mobile), never in JS-accessible web storage. |
+| Safari fix | The previous build used CHIPS `Partitioned` cookies, which **Safari does not support** — login silently failed on Safari. CHIPS has been removed in favour of `SameSite=Lax` (supported everywhere) for first-party web, with the sessionStorage Bearer fallback only for the cross-origin iframe case. |
+| Session refresh | `POST /api/auth/refresh` performs sliding TTL extension: if the current session expires within 7 days, its `expiresAt` is pushed forward by 30 days and the cookie is re-stamped. No token rotation (no new credential issued). The client calls it once on app load. |
 | Suspension | `getSessionUser` returns null for suspended users → effectively instant lockout on next request |
-| Logout | Deletes the `Session` row (token from header or cookie) and clears the cookie; client drops the stored token |
+| Logout | Deletes the `Session` row (token from header or cookie), clears the cookie, and the client drops any `sessionStorage`/in-memory token (and wipes any legacy `localStorage` token from the previous build) |
 | Last-active | `lastActiveAt` touched at most once per 60s (fire-and-forget) — feeds DAU/WAU/MAU |
 
-Known trade-offs (actual state, not fixed here): the token in localStorage is readable by any injected script (XSS amplification risk); `SameSite=None` widens where the cookie is sent, but cross-site JSON mutations fail CORS preflight and non-JSON bodies fail zod parsing — CSRF surface is low yet a same-site cookie + CSRF token remains a production hardening item.
+Known trade-offs (actual state): inside the cross-origin iframe the sessionStorage token is readable by any injected script (XSS amplification) — this is the deliberate, documented cost of the only feasible fallback when cookies are blocked; it is tab-scoped (not a long-lived credential) and the same-site first-party path keeps no client-readable token at all. `SameSite=Lax` is the recommended default; a CSRF token remains a production defense-in-depth item (cross-site JSON mutations currently fail CORS preflight and non-JSON bodies fail zod parsing, so the CSRF surface is low).
 
 ## 2. Authorization (household scoping)
 

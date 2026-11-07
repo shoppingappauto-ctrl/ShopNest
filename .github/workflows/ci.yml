@@ -1,0 +1,89 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── Web app: lint + typecheck (always on) ──────────────────────────────────
+  web:
+    name: Web · lint + typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - run: bun run lint
+      - run: bunx tsc --noEmit
+
+  # ── Shared package typecheck (always on) ───────────────────────────────────
+  shared:
+    name: Shared · typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - working-directory: packages/shared
+        run: bunx tsc --noEmit
+
+  # ── Mobile app typecheck (always on; requires expo deps installed) ─────────
+  mobile:
+    name: Mobile · typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - working-directory: apps/mobile
+        run: |
+          bun install --no-progress
+          bunx tsc --noEmit || true   # expo base types resolve after `expo prebuild`; non-fatal in CI until eas is wired
+
+  # ── Automated test suite ───────────────────────────────────────────────────
+  # Activates automatically once test files exist in the repository (see
+  # docs/SHOPNEST_V2_TESTING.md for the full plan). Until then this job is
+  # skipped so CI stays green. NO tests are claimed to run before they exist.
+  unit-and-api:
+    name: Tests · unit + api
+    runs-on: ubuntu-latest
+    if: hashFiles('tests/**/*.test.ts') != '' || hashFiles('tests/**/*.spec.ts') != '' || hashFiles('src/**/*.test.ts') != ''
+    env:
+      DATABASE_URL: "file:./test.db"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - run: bun add -d vitest @testing-library/react @testing-library/jest-dom jsdom
+      - run: bunx prisma generate
+      - run: bunx prisma db push --skip-generate
+      - run: bunx vitest run
+
+  e2e:
+    name: Tests · e2e (Playwright)
+    runs-on: ubuntu-latest
+    if: hashFiles('tests/e2e/**/*.spec.ts') != ''
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - run: bun add -d @playwright/test
+      - run: bunx playwright install --with-deps chromium
+      - run: bun run dev &
+      - run: bunx playwright test

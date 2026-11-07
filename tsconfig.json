@@ -37,6 +37,11 @@
     ".next/dev/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "apps/mobile",
+    "packages/shared",
+    "skills",
+    "mini-services",
+    "tool-results"
   ]
 }

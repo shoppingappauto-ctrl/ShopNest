@@ -184,7 +184,7 @@ export function useLeaveHousehold() {
 
 export function useDeleteAccount() {
   return useMutation({
-    mutationFn: () => api('/api/auth/register', { method: 'DELETE', noOfflineQueue: true }),
+    mutationFn: () => api('/api/auth/account', { method: 'DELETE', noOfflineQueue: true }),
     onError: (error) =>
       toast({
         variant: 'destructive',

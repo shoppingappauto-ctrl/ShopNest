@@ -1,0 +1,61 @@
+{
+  "expo": {
+    "name": "ShopNest",
+    "slug": "shopnest-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "scheme": "shopnest",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "app.shopnest.mobile",
+      "infoPlist": {
+        "NSCameraUsageDescription": "ShopNest uses the camera to capture photo confirmations when you ask your family 'is this the right product?' while shopping.",
+        "NSPhotoLibraryUsageDescription": "ShopNest can attach an existing photo to an item confirmation request.",
+        "NSMicrophoneUsageDescription": "ShopNest can use the microphone for voice-driven item entry ('add 2 gallons of milk to Walmart')."
+      }
+    },
+    "android": {
+      "package": "app.shopnest.mobile",
+      "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO",
+        "POST_NOTIFICATIONS"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        { "cameraPermission": "ShopNest uses the camera to capture photo confirmations when you ask your family 'is this the right product?' while shopping." }
+      ],
+      [
+        "expo-image-picker",
+        { "photosPermission": "ShopNest can attach an existing photo to an item confirmation request.", "cameraPermission": "ShopNest uses the camera to capture photo confirmations." }
+      ],
+      [
+        "expo-notifications",
+        { "color": "#16a34a" }
+      ],
+      [
+        "expo-secure-store",
+        { "faceIDPermission": "Use Face ID to unlock ShopNest quickly." }
+      ]
+    ],
+    "experiments": {
+      "tsrcPaths": true
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/replace-with-your-project-id"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "replace-with-your-eas-project-id"
+      }
+    },
+    "owner": "shopnest"
+  }
+}

@@ -546,7 +546,7 @@ function HouseholdSettings({ needsHousehold, setTab }: { needsHousehold?: boolea
             <AlertDialogAction
               className="bg-destructive text-white hover:bg-destructive/90"
               onClick={() => {
-                api('/api/auth/register', { method: 'DELETE', noOfflineQueue: true })
+                api('/api/auth/account', { method: 'DELETE', noOfflineQueue: true })
                   .then(() => {
                     window.location.reload()
                   })
